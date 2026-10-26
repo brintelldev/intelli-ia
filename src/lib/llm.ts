@@ -48,7 +48,7 @@ export async function getDisabledProviders(): Promise<string[]> {
 
 export async function getModel(
   module: ModuleKey,
-  opts: { userId?: string | null; overrideModelId?: string | null } = {},
+  opts: { userId?: string | null; overrideModelId?: string | null; preferFallback?: boolean } = {},
 ): Promise<ModelSelection> {
   const [configs, user, disabledProviders] = await Promise.all([
     prisma.llmConfig.findMany({ where: { module: { in: [module, "global"] } } }),
@@ -64,6 +64,7 @@ export async function getModel(
     module: configs.find((c) => c.module === module) ?? null,
     global: configs.find((c) => c.module === "global") ?? null,
     disabledProviders,
+    preferFallback: opts.preferFallback,
   });
 
   const state: ModelState = { activeModelId: picked.primary, fallbackUsed: false };

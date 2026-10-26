@@ -25,6 +25,25 @@ test("precedência: requisição > usuário > módulo > global", () => {
   assert.deepEqual(pick({}), { primary: SONNET, source: "module" });
   assert.deepEqual(pick({ module: null }), { primary: OPUS, source: "global" });
 });
+test("preferFallback: o fallback configurado vira o principal e o principal vira a reserva; ignora o modelo do usuário", () => {
+  const r = pickModels({ ...base, userOverride: OPUS, preferFallback: true });
+  assert.equal(r.primary, GEMINI);
+  assert.equal(r.fallback, SONNET);
+  assert.equal(r.source, "module");
+  // um override explícito da requisição continua valendo
+  assert.equal(pickModels({ ...base, override: GPT, preferFallback: true }).primary, GPT);
+  // provedor do fallback do módulo desativado: vale o próximo fallback configurado (o do global) e o principal do módulo vira reserva
+  const r2 = pickModels({ ...base, preferFallback: true, disabledProviders: ["google"] });
+  assert.equal(r2.primary, GPT);
+  assert.equal(r2.fallback, SONNET);
+  // só o principal utilizável: sem reserva igual ao principal
+  const r3 = pickModels({ ...base, preferFallback: true, disabledProviders: ["google", "openai"] });
+  assert.equal(r3.primary, SONNET);
+  assert.equal(r3.fallback, OPUS);
+  // sem preferFallback nada muda
+  assert.equal(pickModels({ ...base }).primary, SONNET);
+});
+
 function pick(over: Partial<Parameters<typeof pickModels>[0]>) {
   const r = pickModels({ ...base, ...over });
   return { primary: r.primary, source: r.source };

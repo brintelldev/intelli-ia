@@ -1,3 +1,4 @@
+import "@/lib/zod-pt";
 import { z } from "zod";
 import { requireRole, errorResponse } from "@/lib/session";
 import { TEMPLATE_MODULES, TemplateSchema } from "@/lib/templates";

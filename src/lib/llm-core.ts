@@ -24,6 +24,12 @@ export type PickInput = {
   module: ConfigRow | null;
   global: ConfigRow | null;
   disabledProviders: readonly string[];
+  /**
+   * Tarefa auxiliar e barata (sugerir palavras-chave): usa o modelo de FALLBACK configurado como principal
+   * e o de nome principal como reserva. Ignora o `userOverride`, que é a escolha da pessoa para o trabalho
+   * principal, não para esta chamada. Um `override` explícito continua valendo.
+   */
+  preferFallback?: boolean;
 };
 
 export type Picked = {
@@ -49,15 +55,23 @@ export function pickModels(i: PickInput): Picked {
     if (!enabled(i.override)) throw new HttpError(400, "O provedor desse modelo está desativado.");
   }
 
-  const candidates: [Picked["source"], string | null | undefined][] = [
-    ["request", i.override],
-    ["user", i.userOverride],
-    ["module", i.module?.primaryModel],
-    ["global", i.global?.primaryModel],
-    // configuração com o primário desativado: o fallback dela ainda pode servir
-    ["module", i.module?.fallbackModel],
-    ["global", i.global?.fallbackModel],
-  ];
+  const candidates: [Picked["source"], string | null | undefined][] = i.preferFallback
+    ? [
+        ["request", i.override],
+        ["module", i.module?.fallbackModel],
+        ["global", i.global?.fallbackModel],
+        ["module", i.module?.primaryModel],
+        ["global", i.global?.primaryModel],
+      ]
+    : [
+        ["request", i.override],
+        ["user", i.userOverride],
+        ["module", i.module?.primaryModel],
+        ["global", i.global?.primaryModel],
+        // configuração com o primário desativado: o fallback dela ainda pode servir
+        ["module", i.module?.fallbackModel],
+        ["global", i.global?.fallbackModel],
+      ];
   let primary: ModelId | undefined;
   let source: Picked["source"] = "any";
   for (const [src, id] of candidates) {
@@ -73,9 +87,10 @@ export function pickModels(i: PickInput): Picked {
   }
   if (!primary) throw new HttpError(503, "Nenhum provedor de IA está ativo. Fale com o administrador.");
 
-  const fallback =
-    [i.module?.fallbackModel, i.global?.fallbackModel].find((id): id is ModelId => enabled(id) && id !== primary) ??
-    null;
+  const reserve = i.preferFallback
+    ? [i.module?.primaryModel, i.global?.primaryModel]
+    : [i.module?.fallbackModel, i.global?.fallbackModel];
+  const fallback = reserve.find((id): id is ModelId => enabled(id) && id !== primary) ?? null;
 
   return { primary, fallback, config, source };
 }

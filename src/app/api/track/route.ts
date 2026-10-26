@@ -1,3 +1,4 @@
+import "@/lib/zod-pt";
 import { z } from "zod";
 import { ROLES } from "@/lib/rbac";
 import { errorResponse, requireRole } from "@/lib/session";
