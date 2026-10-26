@@ -19,6 +19,9 @@ COPY . .
 RUN DATABASE_URL="postgresql://build:build@localhost:5432/build" \
     BETTER_AUTH_SECRET="build-only-placeholder-not-used-at-runtime" \
     sh -c "npx prisma generate && npm run build"
+# O onnxruntime-node traz binários de macOS e Windows (centenas de MB) que não servem numa imagem Linux.
+RUN rm -rf .next/standalone/node_modules/onnxruntime-node/bin/napi-v6/darwin \
+           .next/standalone/node_modules/onnxruntime-node/bin/napi-v6/win32
 
 # Serviço `migrate` do compose: o builder tem a CLI do Prisma, o prisma.config.ts, o seed (tsx) e as
 # dependências de desenvolvimento. O openssl é para o motor de migrations do Prisma, que não o

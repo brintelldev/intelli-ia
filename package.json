@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "test": "node --import tsx --test \"src/**/*.test.ts\" \"src/**/*.test.tsx\"",
+    "test:db": "node --env-file=.env.local --import tsx --test \"src/**/*.db-test.ts\"",
     "typecheck": "next typegen && tsc --noEmit",
     "check-models": "tsx scripts/check-models.ts"
   },
@@ -17,6 +18,7 @@
     "@ai-sdk/openai": "4.0.102",
     "@ai-sdk/react": "4.0.157",
     "@base-ui/react": "^1.9.0",
+    "@huggingface/transformers": "^4.3.1",
     "@opendocsg/pdf2md": "^0.3.5",
     "@prisma/adapter-pg": "7.10.1",
     "@prisma/client": "7.10.1",

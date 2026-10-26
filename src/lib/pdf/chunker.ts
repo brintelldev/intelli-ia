@@ -3,6 +3,13 @@ import type { Chunk, ExtractedDocument } from "./types";
 
 type Block = { text: string; page: number; section?: string; tokens: number };
 
+/**
+ * ~150 tokens estimados ≈ 125 reais, perto dos 128 em que o modelo de embeddings (MiniLM multilíngue) foi
+ * treinado. Medido na T-08: um fato dentro de um chunk de ~565 tokens cai para similaridade 0,15 com a
+ * pergunta certa (de 0,83 num chunk curto), abaixo de qualquer piso de relevância útil.
+ */
+export const DEFAULT_TARGET_TOKENS = 150;
+
 const HEADING = /^#{1,6}\s+(.*)$/;
 
 /** Quebra o texto em blocos (parágrafos); frases longas demais são divididas para caberem num chunk. */
@@ -55,7 +62,7 @@ function cutWords(text: string, target: number): string[] {
 }
 
 /**
- * Chunks por parágrafo/heading, ~`targetTokens` cada, com `overlap` (fração) do chunk anterior repetido
+ * Chunks por parágrafo/heading, ~`targetTokens` cada (padrão DEFAULT_TARGET_TOKENS), com `overlap` (fração) do chunk anterior repetido
  * no começo do seguinte. `startPage` = página do primeiro bloco NOVO do chunk (o trecho repetido não conta);
  * `sectionTitle` = último heading visto até esse bloco.
  */
@@ -63,7 +70,7 @@ export function chunkDocument(
   doc: ExtractedDocument,
   opts: { targetTokens?: number; overlap?: number } = {},
 ): Chunk[] {
-  const target = opts.targetTokens ?? 600;
+  const target = opts.targetTokens ?? DEFAULT_TARGET_TOKENS;
   const overlap = opts.overlap ?? 0.15;
   const blocks = toBlocks(doc, target);
   const chunks: Chunk[] = [];

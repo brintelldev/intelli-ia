@@ -7,6 +7,12 @@ const nextConfig: NextConfig = {
   output: "standalone",
   // Binários nativos do onnxruntime não podem ser empacotados pelo bundler.
   serverExternalPackages: ["@huggingface/transformers", "onnxruntime-node"],
+  // O rastreador do Next não segue o que o transformers.js carrega (onnxruntime-node, e só parte do
+  // onnxruntime-common): sem isto o pacote standalone fica sem o motor do modelo e o servidor nem sobe.
+  // Os binários de macOS/Windows que vêm junto são removidos no Dockerfile.
+  outputFileTracingIncludes: {
+    "/*": ["./node_modules/onnxruntime-node/**/*", "./node_modules/onnxruntime-common/**/*", "./node_modules/@huggingface/transformers/**/*"],
+  },
   // Cabeçalhos de segurança em todas as respostas. Sem CSP por enquanto: o Next injeta scripts em linha e
   // uma política correta exige nonces; fica como melhoria. O HSTS só vale sob HTTPS (o navegador o ignora em
   // http) e não usa includeSubDomains/preload, para não travar subdomínios que um dia precisem de HTTP.
