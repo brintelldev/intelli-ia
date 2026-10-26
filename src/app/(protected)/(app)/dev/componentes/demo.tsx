@@ -7,9 +7,12 @@ import { Button } from "@/components/ui/button";
 import { ExportButtons } from "@/components/shared/ExportButtons";
 import { ModelSelector, type ModelOption } from "@/components/shared/ModelSelector";
 import { ReportViewer, type ReportSection } from "@/components/shared/ReportViewer";
+import { KeywordInput } from "@/components/documentos/KeywordInput";
+import { PDFUploadZone } from "@/components/documentos/PDFUploadZone";
 import { StepTimeline } from "@/components/shared/StepTimeline";
 import { TemplateEditor } from "@/components/shared/TemplateEditor";
 import type { ExportData } from "@/lib/export";
+import type { PdfResult } from "@/lib/documentos/upload-client";
 import { stepsOf, type StepMessage } from "@/lib/stream-steps";
 import { formatInstructions, withMandatory, type Template } from "@/lib/templates";
 
@@ -35,6 +38,22 @@ const DATA: ExportData = {
   sections: SECTIONS,
   citations: CITATIONS,
 };
+
+function UploadDemo() {
+  const [pdf, setPdf] = useState<PdfResult | null>(null);
+  const [keywords, setKeywords] = useState<string[]>([]);
+  return (
+    <div className="grid gap-6 md:grid-cols-2" data-testid="demo-upload">
+      <PDFUploadZone onChange={setPdf} />
+      <div className="space-y-3">
+        <KeywordInput value={keywords} onChange={setKeywords} documentText={pdf?.doc.text ?? null} filename={pdf?.file.name} />
+        <code data-testid="upload-state" className="block text-xs text-text-secondary">
+          {JSON.stringify({ file: pdf?.file.name ?? null, method: pdf?.method ?? null, pages: pdf?.doc.pages.length ?? null, keywords })}
+        </code>
+      </div>
+    </div>
+  );
+}
 
 function StepsDemo({ fail }: { fail?: boolean }) {
   const transport = useMemo(() => new DefaultChatTransport({ api: fail ? "/api/dev/steps?fail=1" : "/api/dev/steps" }), [fail]);
@@ -85,6 +104,11 @@ export function Demo() {
           <ModelSelector value={realModel} onChange={setRealModel} />
           <code data-testid="real-model-value" className="text-sm text-text-secondary">{`API: "${realModel}"`}</code>
         </div>
+      </section>
+
+      <section className="space-y-3">
+        <h2 className="text-lg font-semibold">PDFUploadZone + KeywordInput</h2>
+        <UploadDemo />
       </section>
 
       <section className="space-y-3" data-testid="demo-template">
