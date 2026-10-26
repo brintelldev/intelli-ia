@@ -5,7 +5,9 @@ import { Button } from "@/components/ui/button";
 import { ExportButtons } from "@/components/shared/ExportButtons";
 import { ModelSelector, type ModelOption } from "@/components/shared/ModelSelector";
 import { ReportViewer, type ReportSection } from "@/components/shared/ReportViewer";
+import { TemplateEditor } from "@/components/shared/TemplateEditor";
 import type { ExportData } from "@/lib/export";
+import { formatInstructions, withMandatory, type Template } from "@/lib/templates";
 
 const MOCK_MODELS: ModelOption[] = [
   { id: "anthropic:claude-sonnet-5-5", label: "Claude Sonnet 5.5", provider: "anthropic", providerLabel: "Anthropic", inputPerM: 2, outputPerM: 10 },
@@ -34,6 +36,8 @@ export function Demo() {
   const [model, setModel] = useState("");
   const [realModel, setRealModel] = useState("");
   const [shown, setShown] = useState(0);
+  const [tpl, setTpl] = useState<Template | null>(null);
+  const [tplId, setTplId] = useState<string | null>(null);
   const [playing, setPlaying] = useState(false);
   const running = playing && shown < SECTIONS.length;
 
@@ -57,6 +61,13 @@ export function Demo() {
           <ModelSelector value={realModel} onChange={setRealModel} />
           <code data-testid="real-model-value" className="text-sm text-text-secondary">{`API: "${realModel}"`}</code>
         </div>
+      </section>
+
+      <section className="space-y-3" data-testid="demo-template">
+        <h2 className="text-lg font-semibold">TemplateEditor</h2>
+        <TemplateEditor module="demo2_report" value={tpl} onChange={(t, m) => { setTpl(t); setTplId(m.templateId); }} defaultOpen />
+        <code data-testid="template-id" className="block text-sm text-text-secondary">{`templateId: ${tplId}`}</code>
+        {tpl && <pre data-testid="template-prompt" className="max-h-64 overflow-auto whitespace-pre-wrap rounded-lg border border-border bg-surface p-3 text-xs text-text-secondary">{formatInstructions(withMandatory(tpl, "demo2_report"))}</pre>}
       </section>
 
       <section className="space-y-3" data-testid="demo-export">

@@ -70,3 +70,12 @@ test("ModelSelector: mostra o modelo escolhido e o padrão quando não há escol
   assert.match(renderToStaticMarkup(<ModelSelector value="a:x" onChange={() => {}} models={models} />), /Modelo X/);
   assert.match(renderToStaticMarkup(<ModelSelector value="" onChange={() => {}} models={models} />), /Padrão do sistema/);
 });
+
+test("TemplateEditor: sem lista carregada mostra o estado de carregamento, recolhido por padrão", async () => {
+  const { TemplateEditor } = await import("./TemplateEditor");
+  const out = renderToStaticMarkup(<TemplateEditor module="demo2_report" value={null} onChange={() => {}} />);
+  assert.match(out, /Formato do relatório/);
+  assert.match(out, /Carregando modelos/);
+  assert.ok(!/<details[^>]* open/.test(out), "recolhido por padrão");
+  assert.match(renderToStaticMarkup(<TemplateEditor module="demo2_report" value={null} onChange={() => {}} defaultOpen />), /<details[^>]* open/);
+});
