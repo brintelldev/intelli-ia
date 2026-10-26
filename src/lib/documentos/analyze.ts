@@ -7,6 +7,7 @@ import {
   ANALYSIS_SYSTEM, buildAnalysisPrompt, checkAnalysis, DocumentAnalysisSchema, groupPages, MAP_SYSTEM, needsMapReduce, pagesToText,
   type AnalyzeInput, type CheckedAnalysis, type RawAnalysis,
 } from "./analysis";
+import { pumpPartials } from "./stream-object";
 
 export type AnalysisPart =
   | { phase: "partial"; analysis: DeepPartial<RawAnalysis> }
@@ -112,13 +113,9 @@ export async function runAnalysis(opts: {
     output: Output.object({ schema }),
   });
 
-  let last = 0;
-  for await (const partial of result.partialOutputStream) {
-    const now = performance.now();
-    if (now - last < PARTIAL_EVERY_MS) continue;
-    last = now;
-    writer.write({ type: "data-analysis", id: "analysis", data: { phase: "partial", analysis: partial as DeepPartial<RawAnalysis> } });
-  }
+  await pumpPartials(result.partialOutputStream, PARTIAL_EVERY_MS, (partial) =>
+    writer.write({ type: "data-analysis", id: "analysis", data: { phase: "partial", analysis: partial as DeepPartial<RawAnalysis> } }),
+  );
   let raw: RawAnalysis;
   try {
     raw = (await result.output) as RawAnalysis;
