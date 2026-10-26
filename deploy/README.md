@@ -13,6 +13,11 @@ Recomendado **4 vCPU, 8 GB de RAM e 40 GB de disco**. A imagem do docling sozinh
 **Atenção:** as senhas das contas de demonstração criadas pelo seed são **públicas** (estão no README). Defina `SEED_ADMIN_PASSWORD`,
 `SEED_ANALISTA_PASSWORD` e `SEED_LEITOR_PASSWORD` no `.env.production` **antes do primeiro deploy**.
 
+**Contas dos provedores de IA (confira uma vez):**
+- Use projetos/organizações **com faturamento ativo** nos três provedores.
+- **Google (Gemini):** projetos criados a partir de 26/10/2026 vêm com o **registro de logs ligado por padrão**, guardando prompts e respostas no seu projeto (padrão de 55 dias). No console do projeto, desligue o registro ou reduza o prazo, e **não** compartilhe datasets com o Google (isso muda os termos para o uso não pago).
+- A política de dados de cada provedor está resumida em `/privacidade`; reconfira se mudar de plano ou de modelo.
+
 ## Primeiro deploy no VPS
 
 > **Testado localmente** em 26/10/2026: a stack de produção completa (`compose.yaml` + Nginx com `deploy/nginx/intellisuite.conf`) subiu do zero, migrou, semeou e passou no `scripts/smoke.sh`. **Não testado:** HTTPS/Certbot e a arquitetura **amd64** (o teste foi em arm64); o primeiro deploy no VPS valida essas duas coisas.

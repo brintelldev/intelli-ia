@@ -27,6 +27,7 @@ export const USAGE_ACTIONS = [
   "collection_access_update",
   "share_created",
   "share_opened",
+  "data_deleted",
 ] as const;
 export type UsageAction = (typeof USAGE_ACTIONS)[number];
 
