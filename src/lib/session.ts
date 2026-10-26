@@ -26,6 +26,8 @@ export async function requireRole(roles: readonly Role[]): Promise<AppSession & 
 
 /** `catch (e) { return errorResponse(e) }` nas rotas; erros inesperados continuam subindo. */
 export function errorResponse(e: unknown): Response {
-  if (e instanceof HttpError) return Response.json({ error: e.message }, { status: e.status });
+  if (e instanceof HttpError) {
+    return Response.json({ error: e.message, ...(e.code ? { code: e.code } : {}) }, { status: e.status });
+  }
   throw e;
 }
