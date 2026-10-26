@@ -94,6 +94,17 @@ const DETAIL: Record<Template["format"]["detail"], string> = {
   detalhado: "Nível de detalhe: detalhado, com dados, números, exemplos e ressalvas das fontes.",
 };
 
+/** Os critérios de formatação (tom, tamanho, detalhe, citações, idioma), um por linha, sem o marcador "- ". */
+export function formatCriteria(format: Template["format"]): string[] {
+  return [
+    TONE[format.tone],
+    LENGTH[format.length],
+    DETAIL[format.detail],
+    format.citations ? "Cite as fontes no texto com marcadores numéricos entre colchetes, como [1] e [2], que correspondem à lista de fontes." : "Não use marcadores de citação no texto.",
+    "Escreva em português do Brasil, em Markdown (listas e negrito quando ajudarem), sem repetir o título da seção dentro do conteúdo.",
+  ];
+}
+
 /** Trecho do prompt de sistema com as seções (em ordem) e os critérios de formatação. */
 export function formatInstructions(t: Template): string {
   const list = t.sections.map((s, i) => `${i + 1}. "${s.title}"${s.instructions ? `: ${s.instructions}` : ""}`).join("\n");
@@ -102,11 +113,7 @@ export function formatInstructions(t: Template): string {
     list,
     "",
     "Critérios de formatação:",
-    `- ${TONE[t.format.tone]}`,
-    `- ${LENGTH[t.format.length]}`,
-    `- ${DETAIL[t.format.detail]}`,
-    `- ${t.format.citations ? "Cite as fontes no texto com marcadores numéricos entre colchetes, como [1] e [2], que correspondem à lista de fontes." : "Não use marcadores de citação no texto."}`,
-    "- Escreva em português do Brasil, em Markdown (listas e negrito quando ajudarem), sem repetir o título da seção dentro do conteúdo.",
+    ...formatCriteria(t.format).map((c) => `- ${c}`),
   ].join("\n");
 }
 
