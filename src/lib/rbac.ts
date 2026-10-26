@@ -19,6 +19,7 @@ export const ROUTE_RULES: readonly (readonly [prefix: string, roles: readonly Ro
   ["/home", ALL],
   ["/chat", ALL], // Leitor entra em modo leitura (ver ACTIONS)
   ["/compartilhado", ALL],
+  ["/dev", ALL], // vitrine dos componentes; a página responde 404 em produção
   ["/documentos", ["Admin", "Analista"]],
   ["/pesquisa", ["Admin", "Analista"]],
   ["/admin/dashboard", ["Admin", "Analista"]], // Analista vê o dashboard sem os controles

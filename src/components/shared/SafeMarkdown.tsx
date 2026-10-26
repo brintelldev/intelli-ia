@@ -10,8 +10,9 @@ import { cn } from "@/lib/utils";
 //   e o navegador enviaria o dado sozinho, sem clique (o react-markdown renderizaria a <img> e ainda
 //   pré-carregaria a URL). Vira o texto "[imagem: alt]".
 // - Links só com http, https e mailto, abrem em outra aba, sem referrer e sem herdar o contexto.
+//   Âncora da própria página (#cit-1) também vale: é como as citações [n] apontam para a lista de fontes.
 
-const ALLOWED_URL = /^(?:https?:|mailto:)/i;
+const ALLOWED_URL = /^(?:https?:|mailto:|#[\w-]+$)/i;
 
 /** Qualquer URL fora da lista vira "" (o link some, o texto fica). Exportado para o teste. */
 export function safeUrl(url: string): string {
@@ -56,7 +57,11 @@ const components: Components = {
   th: ({ children }) => <th className="border border-border bg-surface-raised px-2 py-1 text-left font-medium">{children}</th>,
   td: ({ children }) => <td className="border border-border px-2 py-1 align-top">{children}</td>,
   a: ({ href, children }) =>
-    href ? (
+    href?.startsWith("#") ? (
+      <a href={href} className="text-accent-primary no-underline hover:underline">
+        {children}
+      </a>
+    ) : href ? (
       <a href={href} target="_blank" rel="noopener noreferrer nofollow" className="text-accent-primary underline underline-offset-2">
         {children}
       </a>
