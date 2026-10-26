@@ -1,12 +1,16 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useChat } from "@ai-sdk/react";
+import { DefaultChatTransport } from "ai";
+import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ExportButtons } from "@/components/shared/ExportButtons";
 import { ModelSelector, type ModelOption } from "@/components/shared/ModelSelector";
 import { ReportViewer, type ReportSection } from "@/components/shared/ReportViewer";
+import { StepTimeline } from "@/components/shared/StepTimeline";
 import { TemplateEditor } from "@/components/shared/TemplateEditor";
 import type { ExportData } from "@/lib/export";
+import { stepsOf, type StepMessage } from "@/lib/stream-steps";
 import { formatInstructions, withMandatory, type Template } from "@/lib/templates";
 
 const MOCK_MODELS: ModelOption[] = [
@@ -31,6 +35,26 @@ const DATA: ExportData = {
   sections: SECTIONS,
   citations: CITATIONS,
 };
+
+function StepsDemo({ fail }: { fail?: boolean }) {
+  const transport = useMemo(() => new DefaultChatTransport({ api: fail ? "/api/dev/steps?fail=1" : "/api/dev/steps" }), [fail]);
+  const { messages, sendMessage, status, error } = useChat<StepMessage>({ transport });
+  const last = messages.filter((m) => m.role === "assistant").at(-1);
+  const text = last?.parts.filter((p) => p.type === "text").map((p) => (p as { text: string }).text).join("");
+  return (
+    <div className="space-y-3 rounded-lg border border-border p-4" data-testid={fail ? "steps-fail" : "steps-ok"}>
+      <div className="flex items-center gap-3">
+        <Button size="sm" variant="outline" disabled={status === "submitted" || status === "streaming"} onClick={() => sendMessage({ text: "teste" })}>
+          {fail ? "Rodar com falha" : "Rodar 3 etapas"}
+        </Button>
+        <code className="text-xs text-text-secondary" data-testid="steps-status">{status}</code>
+      </div>
+      <StepTimeline steps={last ? stepsOf(last) : []} renderExtra={(s) => (typeof s.sources === "number" ? <span className="rounded-full border border-border px-2 text-xs text-text-secondary">{s.sources} fontes</span> : null)} />
+      {text && <p className="text-sm" data-testid="steps-text">{text}</p>}
+      {error && <p className="text-sm text-destructive" data-testid="steps-error">{error.message}</p>}
+    </div>
+  );
+}
 
 export function Demo() {
   const [model, setModel] = useState("");
@@ -68,6 +92,14 @@ export function Demo() {
         <TemplateEditor module="demo2_report" value={tpl} onChange={(t, m) => { setTpl(t); setTplId(m.templateId); }} defaultOpen />
         <code data-testid="template-id" className="block text-sm text-text-secondary">{`templateId: ${tplId}`}</code>
         {tpl && <pre data-testid="template-prompt" className="max-h-64 overflow-auto whitespace-pre-wrap rounded-lg border border-border bg-surface p-3 text-xs text-text-secondary">{formatInstructions(withMandatory(tpl, "demo2_report"))}</pre>}
+      </section>
+
+      <section className="space-y-3" data-testid="demo-steps">
+        <h2 className="text-lg font-semibold">StepTimeline + stream de etapas (useChat)</h2>
+        <div className="grid gap-4 md:grid-cols-2">
+          <StepsDemo />
+          <StepsDemo fail />
+        </div>
       </section>
 
       <section className="space-y-3" data-testid="demo-export">

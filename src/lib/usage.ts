@@ -26,9 +26,10 @@ import {
 //   const sel = await getModel("demo1", { userId: session.user.id });
 //   const result = streamText({
 //     model: sel.model, ...sel.settings, prompt,
-//     onFinish: ({ usage }) => void track({                        // sem await: nunca atrasa a resposta
+//     // AI SDK 7: `onFinish` é alias obsoleto de `onEnd`; `usage` é só do ÚLTIMO passo, `totalUsage` soma todos
+//     onEnd: ({ totalUsage }) => void track({                      // sem await: nunca atrasa a resposta
 //       module: "demo1", action: "pdf_analysis", userId: session.user.id, status: "success",
-//       durationMs: Date.now() - t0, metadata: { ...usageMeta(sel.state, usage), title: filename },
+//       durationMs: Date.now() - t0, metadata: { ...usageMeta(sel.state, totalUsage), title: filename },
 //     }),
 //     onError: ({ error }) => void track({ ..., status: "error", metadata: { error: String(error) } }),
 //   });
