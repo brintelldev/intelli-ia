@@ -1,36 +1,78 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Intelli AI (IntelliSuite)
 
-## Getting Started
+Plataforma de IA com 4 módulos: análise de documentos, pesquisa web, chat RAG e painel admin.
+Deploy em produção: [`deploy/README.md`](deploy/README.md).
 
-First, run the development server:
+## Pré-requisitos
+
+- Node 24 LTS
+- Docker com Compose v2 (Docker Desktop, OrbStack ou Docker Engine). Reserve ~8 GB de RAM para os containers (o docling é o mais pesado)
+
+## Setup local
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+cp .env.example .env.local      # preencha as chaves (ANTHROPIC, OPENAI, GOOGLE, TAVILY) quando chegar nas tarefas que usam
+cat > .env <<EOF                # lido só pelo Docker Compose
+POSTGRES_PASSWORD="$(openssl rand -hex 24)"
+SEARXNG_SECRET="$(openssl rand -hex 32)"
+EOF
+docker compose up -d            # postgres (pgvector), docling e searxng
+npm install
+npm run dev                     # http://localhost:3000 (se estiver ocupada: npx next dev -p 3001)
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Se mudar a porta, ajuste `BETTER_AUTH_URL` e `NEXT_PUBLIC_APP_URL` no `.env.local`: o Better Auth valida a origem das requisições.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Usuários de demonstração (seed)
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+`npx prisma migrate dev` (ou `npx prisma db seed`) cria 3 contas. **Troque as senhas em qualquer ambiente real.**
 
-## Learn More
+| Perfil | E-mail | Senha |
+|---|---|---|
+| Admin | admin@intellisuite.com | Admin@2025 |
+| Analista | analista@intellisuite.com | Analista@2025 |
+| Leitor | leitor@intellisuite.com | Leitor@2025 |
 
-To learn more about Next.js, take a look at the following resources:
+## Testes
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```bash
+npm test             # node:test + tsx: permissões (rbac), perfis do Better Auth, roteamento da Home, formatação
+npm run typecheck    # next typegen && tsc --noEmit
+npm run lint
+npm run check-models # confere modelos de IA, preços e chaves (rode antes de cada apresentação; --offline e --no-calls também existem)
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+> O `next build` pode passar com um erro que só o `next dev` mostra (ex.: valores instáveis no pré-render). Depois de mexer em páginas, abra a rota no dev e procure `Error` no log.
 
-## Deploy on Vercel
+Use a mesma `POSTGRES_PASSWORD` do `.env` na `DATABASE_URL` do `.env.local`.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Infra de dev
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+`docker compose up -d` sobe só a infraestrutura; o Next roda no host. As portas ficam em `127.0.0.1`:
+
+| Serviço | Porta | Verificação |
+|---|---|---|
+| PostgreSQL 17 + pgvector | 5432 | `docker compose exec postgres psql -U intellisuite -c "SELECT version();"` |
+| docling-serve | 5001 | `curl localhost:5001/health` |
+| SearXNG | 8080 | `curl "localhost:8080/search?q=teste&format=json"` |
+
+```bash
+docker compose ps               # os 3 devem estar "healthy"
+docker compose logs -f searxng  # logs de um serviço
+docker compose down             # para tudo, mantém os dados
+```
+
+> Nunca use `docker compose down -v` em produção: apaga o banco.
+
+Em produção use `docker compose -f compose.yaml ...` (sem o `compose.override.yaml` de dev). Detalhes em [`deploy/README.md`](deploy/README.md).
+
+## Deploy (produção)
+
+Stack completa em Docker (`compose.yaml`) com Nginx do host na frente. O roteiro do VPS, a tabela de erros e as configurações estão em [`deploy/README.md`](deploy/README.md). O portão de saída de cada bloco é:
+
+```bash
+./scripts/smoke.sh https://SEU_DOMINIO    # saúde, login dos 3 perfis, matriz de acesso e streaming
+```
+
+No servidor defina `SEED_ADMIN_PASSWORD`, `SEED_ANALISTA_PASSWORD` e `SEED_LEITOR_PASSWORD` no `.env.production` **antes do primeiro deploy**: as senhas padrão da tabela acima são públicas.
+

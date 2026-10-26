@@ -1,0 +1,16 @@
+# Fora da imagem: dependências (instaladas no build), artefatos, segredos e o que não é código.
+node_modules
+.next
+.git
+.cache
+src/generated
+*.log
+.env*
+!.env.example
+compose*.yaml
+Dockerfile
+.dockerignore
+README.md
+deploy
+scripts
+searxng

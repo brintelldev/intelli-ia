@@ -1,0 +1,271 @@
+// Schema unificado (TECHSPEC v2, §3). A URL do banco fica em prisma.config.ts (Prisma 7).
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─── AUTH (Better Auth + plugin admin) ───────────────────
+// Campos de User/Session conferidos contra better-auth@1.7.13 (plugin admin).
+// Ao atualizar o better-auth, rever as 4 tabelas abaixo.
+model User {
+  id            String   @id
+  name          String
+  email         String   @unique
+  emailVerified Boolean  @default(false)
+  image         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // plugin admin: role = Admin | Analista | Leitor; banned = "inativo"
+  role       String?   @default("Leitor")
+  banned     Boolean?  @default(false)
+  banReason  String?
+  banExpires DateTime?
+
+  // campos do app (additionalFields no Better Auth)
+  modelOverride String? // "provedor:modelo" (ex.: anthropic:claude-sonnet-5-5) que sobrepõe o modelo do módulo para este usuário
+  costLimitDay  Float? // limite diário em USD (Float: Decimal viraria objeto na sessão)
+  lastAccessAt  DateTime?
+
+  sessions     Session[]
+  accounts     Account[]
+  chatSessions ChatSession[]
+  usageEvents  UsageEvent[]
+
+  @@map("user")
+}
+
+model Session {
+  id             String   @id
+  expiresAt      DateTime
+  token          String   @unique
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  ipAddress      String?
+  userAgent      String?
+  userId         String
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  impersonatedBy String?
+
+  @@index([userId])
+  @@map("session")
+}
+
+model Account {
+  id                    String    @id
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String? // hash scrypt do Better Auth (providerId = "credential")
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@index([userId])
+  @@map("account")
+}
+
+model Verification {
+  id         String   @id
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([identifier])
+  @@map("verification")
+}
+
+// ─── CONFIGURAÇÃO ────────────────────────────────────────
+model LlmConfig {
+  id            String   @id @default(cuid())
+  module        String   @unique // 'global' | 'demo1' | 'demo2' | 'demo3'
+  primaryModel  String
+  fallbackModel String
+  temperature   Float    @default(0.7)
+  maxTokens     Int      @default(4096)
+  costLimitDay  Float?
+  updatedById   String?
+  updatedAt     DateTime @updatedAt
+}
+
+// Chaves: disabledProviders (string[]), contentFilters ({ [role]: boolean }),
+// globalCostLimitDay (number), approvalRequired (string[]),
+// presentationMode ('off'|'record'|'fallback'), sharingEnabled (boolean)
+model AppSetting {
+  key   String @id
+  value Json
+}
+
+// ─── MÉTRICAS ────────────────────────────────────────────
+model UsageEvent {
+  id         String   @id @default(cuid())
+  module     String // 'demo1' | 'demo2' | 'demo3' | 'demo4'
+  action     String // ver TECHSPEC §10
+  userId     String?
+  user       User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  durationMs Int?
+  status     String // 'success' | 'error'
+  // modelId, inputTokens, outputTokens, costUsd, cacheHit, title (≤120), synthetic…
+  // Nunca conteúdo de documentos ou mensagens (privacidade, T-06b).
+  metadata   Json     @default("{}")
+  createdAt  DateTime @default(now())
+
+  @@index([createdAt(sort: Desc)])
+  @@index([module, action, createdAt])
+  @@index([userId, createdAt])
+}
+
+model ApprovalQueue {
+  id           String    @id @default(cuid())
+  requesterId  String
+  action       String // 'brief_export'
+  payload      Json
+  status       String    @default("pending") // 'pending' | 'approved' | 'rejected'
+  reviewedById String?
+  reviewNote   String?
+  createdAt    DateTime  @default(now())
+  reviewedAt   DateTime?
+
+  @@index([status, createdAt])
+}
+
+// ─── DOCUMENTOS E VETORES ────────────────────────────────
+// Coleções da base especializada + acesso por informação (itens 129 e 136).
+model Collection {
+  id             String   @id @default(cuid())
+  name           String
+  kind           String // 'normativa' | 'artigo_tecnico' | 'referencia_oficial' | 'documento'
+  description    String?
+  allowedRoles   String[] // ex.: ['Admin','Analista']
+  allowedUserIds String[]
+  createdById    String
+  createdAt      DateTime @default(now())
+}
+
+model DocumentSource {
+  id           String   @id @default(cuid())
+  userId       String // quem enviou
+  collectionId String? // nulo = privado do userId
+  filename     String
+  sourceType   String // 'demo1_analysis' | 'chat_upload' | 'web_research' | 'base'
+  originUrl    String?
+  license      String?
+  topics       String[]
+  category     String?
+  summary      String?
+  chunkCount   Int      @default(0)
+  createdAt    DateTime @default(now())
+
+  @@index([userId])
+  @@index([collectionId])
+}
+
+// Colunas em snake_case para o SQL cru de lib/vector-store.ts ficar legível.
+// O índice HNSW é criado direto na migration (Prisma não modela índices vetoriais).
+model DocumentChunk {
+  id           String                     @id @default(uuid())
+  sourceId     String                     @map("source_id")
+  sourceType   String                     @map("source_type")
+  userId       String                     @map("user_id")
+  collectionId String?                    @map("collection_id")
+  content      String
+  embedding    Unsupported("vector(384)")
+  metadata     Json                       @default("{}")
+  createdAt    DateTime                   @default(now()) @map("created_at")
+
+  @@index([sourceId])
+  @@index([sourceType, userId])
+  @@index([collectionId])
+  @@map("document_chunks")
+}
+
+// ─── MODELOS DE SEÇÕES (itens 115, 121, 122) ─────────────
+model ReportTemplate {
+  id        String   @id @default(cuid())
+  name      String
+  module    String // 'demo1_summary' | 'demo2_report'
+  ownerId   String? // nulo = modelo do sistema
+  sections  Json // { title, instructions? }[]
+  format    Json // { tone, length, citations, detail }
+  createdAt DateTime @default(now())
+
+  @@unique([module, name, ownerId])
+  @@index([module, ownerId])
+}
+
+// ─── COMPARTILHAMENTO (item 135) ─────────────────────────
+model ShareLink {
+  token       String    @id // 32 bytes aleatórios, base64url
+  kind        String // 'chat' | 'report'
+  targetId    String
+  createdById String
+  expiresAt   DateTime
+  revokedAt   DateTime?
+  createdAt   DateTime  @default(now())
+
+  @@index([createdById])
+}
+
+// ─── CHAT ────────────────────────────────────────────────
+model ChatSession {
+  id        String        @id @default(cuid())
+  userId    String
+  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String
+  threadId  String? // = ResearchReport.id quando aberta via ?report=
+  createdAt DateTime      @default(now())
+  messages  ChatMessage[]
+
+  @@index([userId, createdAt])
+}
+
+model ChatMessage {
+  id        String      @id // gerado no servidor pelo AI SDK
+  sessionId String
+  session   ChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  role      String // 'user' | 'assistant' | 'system'
+  parts     Json // UIMessage.parts (texto + data parts)
+  citations Json?
+  createdAt DateTime    @default(now())
+
+  @@index([sessionId, createdAt])
+}
+
+// ─── PESQUISA ────────────────────────────────────────────
+model ResearchReport {
+  id               String   @id @default(cuid())
+  userId           String
+  query            String
+  optimizedQueries String[]
+  sources          Json // { url, title, score, type, origin, robotsAllowed, category, summary }[]
+  report           Json // { sections[], sourceIndex[], references[] }
+  templateId       String?
+  modelUsed        String
+  sourceFilter     String
+  createdAt        DateTime @default(now())
+
+  @@index([userId, createdAt])
+}
+
+// ─── CACHE (Demo 2 + 3) e replay do modo apresentação ────
+model ResponseCache {
+  cacheKey  String   @id
+  response  Json
+  module    String // 'demo2' | 'demo3' | 'replay'
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([expiresAt])
+}

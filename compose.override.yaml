@@ -1,0 +1,14 @@
+# Só desenvolvimento (carregado automaticamente por `docker compose up`).
+# O Next roda no host (npm run dev); as migrations rodam com `npx prisma migrate dev`.
+# Em produção este arquivo NÃO é usado: docker compose -f compose.yaml ...
+services:
+  nextjs:
+    profiles: ["prod"]
+  migrate:
+    profiles: ["prod"]
+  postgres:
+    ports: ["127.0.0.1:5432:5432"]
+  docling:
+    ports: ["127.0.0.1:5001:5001"]
+  searxng:
+    ports: ["127.0.0.1:8080:8080"]

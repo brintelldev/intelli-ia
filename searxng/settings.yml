@@ -1,0 +1,14 @@
+use_default_settings: true
+
+server:
+  # secret_key vem do ambiente (SEARXNG_SECRET)
+  limiter: false # uso interno, sem rate limiter
+  image_proxy: false
+
+search:
+  formats:
+    - html
+    - json # OBRIGATÓRIO: a aplicação consome a API JSON
+
+# Os engines padrão já vêm habilitados. Se algum começar a falhar (o Google
+# bloqueia com frequência), desabilite só ele aqui.
