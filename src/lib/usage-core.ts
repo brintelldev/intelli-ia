@@ -11,6 +11,7 @@ export const USAGE_ACTIONS = [
   "keyword_suggest",
   "pdf_analysis",
   "brief_generation",
+  "summary_generation",
   "document_export",
   "web_search",
   "search_cache_hit",

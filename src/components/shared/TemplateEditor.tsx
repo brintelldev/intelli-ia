@@ -47,6 +47,7 @@ export function TemplateEditor({
   onChange,
   collapsible = true,
   defaultOpen = false,
+  formatFields = ["tone", "length", "detail", "citations"],
   className,
 }: {
   module: TemplateModule;
@@ -54,6 +55,8 @@ export function TemplateEditor({
   onChange: (t: Template, meta: { templateId: string | null }) => void;
   collapsible?: boolean;
   defaultOpen?: boolean;
+  /** quais critérios de formatação mostrar (o resumo do Demo 1 tira tom e tamanho: vêm dos controles de público e tamanho) */
+  formatFields?: ("tone" | "length" | "detail" | "citations")[];
   className?: string;
 }) {
   const [list, setList] = useState<Stored[] | null>(null);
@@ -196,10 +199,10 @@ export function TemplateEditor({
       </Button>
 
       <div className="flex flex-wrap items-end gap-3 border-t border-border pt-4">
-        <Option label="Tom" value={draft.format.tone} options={TONES} onChange={(tone) => edit({ ...draft, format: { ...draft.format, tone } })} />
-        <Option label="Tamanho" value={draft.format.length} options={LENGTHS} onChange={(length) => edit({ ...draft, format: { ...draft.format, length } })} />
-        <Option label="Nível de detalhe" value={draft.format.detail} options={DETAILS} onChange={(detail) => edit({ ...draft, format: { ...draft.format, detail } })} />
-        <Option label="Citações no texto" value={draft.format.citations ? "sim" : "nao"} options={{ sim: "Sim", nao: "Não" }} onChange={(v) => edit({ ...draft, format: { ...draft.format, citations: v === "sim" } })} />
+        {formatFields.includes("tone") && <Option label="Tom" value={draft.format.tone} options={TONES} onChange={(tone) => edit({ ...draft, format: { ...draft.format, tone } })} />}
+        {formatFields.includes("length") && <Option label="Tamanho" value={draft.format.length} options={LENGTHS} onChange={(length) => edit({ ...draft, format: { ...draft.format, length } })} />}
+        {formatFields.includes("detail") && <Option label="Nível de detalhe" value={draft.format.detail} options={DETAILS} onChange={(detail) => edit({ ...draft, format: { ...draft.format, detail } })} />}
+        {formatFields.includes("citations") && <Option label="Citações no texto" value={draft.format.citations ? "sim" : "nao"} options={{ sim: "Sim", nao: "Não" }} onChange={(v) => edit({ ...draft, format: { ...draft.format, citations: v === "sim" } })} />}
       </div>
 
       {(dirty || !selected) && (

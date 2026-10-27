@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { ExportButtons } from "@/components/shared/ExportButtons";
 import { ModelSelector, type ModelOption } from "@/components/shared/ModelSelector";
 import { ReportViewer, type ReportSection } from "@/components/shared/ReportViewer";
+import { Demo1 } from "./demo1";
 import { KeywordInput } from "@/components/documentos/KeywordInput";
 import { PDFUploadZone } from "@/components/documentos/PDFUploadZone";
 import { StepTimeline } from "@/components/shared/StepTimeline";
@@ -105,6 +106,8 @@ export function Demo() {
           <code data-testid="real-model-value" className="text-sm text-text-secondary">{`API: "${realModel}"`}</code>
         </div>
       </section>
+
+      <Demo1 />
 
       <section className="space-y-3">
         <h2 className="text-lg font-semibold">PDFUploadZone + KeywordInput</h2>
