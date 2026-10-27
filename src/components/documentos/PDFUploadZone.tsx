@@ -27,10 +27,13 @@ const size = (bytes: number) => (bytes < 1024 * 1024 ? `${Math.max(1, Math.round
  */
 export function PDFUploadZone({
   onChange,
+  onBusyChange,
   disabled,
   className,
 }: {
   onChange: (result: PdfResult | null) => void;
+  /** avisa quando a leitura começa e termina (a página bloqueia "Analisar" enquanto lê) */
+  onBusyChange?: (busy: boolean) => void;
   disabled?: boolean;
   className?: string;
 }) {
@@ -40,6 +43,10 @@ export function PDFUploadZone({
   const [over, setOver] = useState(false);
   const abort = useRef<AbortController | null>(null);
   const busy = state.kind === "reading" || state.kind === "ocr";
+
+  useEffect(() => {
+    onBusyChange?.(busy);
+  }, [busy, onBusyChange]);
 
   // cronômetro do OCR (o servidor não informa o andamento: só dá para mostrar que está trabalhando e há quanto tempo)
   useEffect(() => {
@@ -151,25 +158,30 @@ export function PDFUploadZone({
         )}
 
         {done && (
-          <div className="flex w-full items-center gap-3 text-left" data-testid="pdf-done">
-            <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-accent-docs/12 text-accent-docs">
-              <CheckCircle2Icon className="size-5" />
-            </span>
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-medium text-text-primary" title={done.file.name}>{done.file.name}</p>
-              <p className="text-xs text-text-secondary">
-                {done.doc.pages.length} {done.doc.pages.length === 1 ? "página" : "páginas"} · {size(done.file.size)} · ~{estimateTokens(done.doc.text).toLocaleString("pt-BR")} tokens
-              </p>
+          <div className="w-full space-y-3 text-left" data-testid="pdf-done">
+            <div className="flex items-center gap-3">
+              <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-accent-docs/12 text-accent-docs">
+                <CheckCircle2Icon className="size-5" />
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-medium text-text-primary" title={done.file.name}>{done.file.name}</p>
+                <p className="text-xs text-text-secondary">
+                  {done.doc.pages.length} {done.doc.pages.length === 1 ? "página" : "páginas"} · {size(done.file.size)} · ~{estimateTokens(done.doc.text).toLocaleString("pt-BR")} tokens
+                </p>
+              </div>
             </div>
-            <Badge variant={done.method === "digital" ? "docs" : "admin"} title={done.method === "digital" ? "Texto extraído no seu navegador" : "Texto reconhecido por OCR: pode haver pequenos erros de leitura"}>
-              {done.method === "digital" ? "Digital" : "Escaneado"}
-            </Badge>
-            <Button type="button" size="sm" variant="outline" disabled={disabled} onClick={(e) => { e.stopPropagation(); open(); }}>
-              Trocar
-            </Button>
-            <Button type="button" size="icon-sm" variant="ghost" aria-label="Remover o arquivo" disabled={disabled} onClick={(e) => { e.stopPropagation(); reset(); }}>
-              <XIcon />
-            </Button>
+            <div className="flex items-center gap-2">
+              <Badge variant={done.method === "digital" ? "docs" : "admin"} title={done.method === "digital" ? "Texto extraído no seu navegador" : "Texto reconhecido por OCR: pode haver pequenos erros de leitura"}>
+                {done.method === "digital" ? "Digital" : "Escaneado"}
+              </Badge>
+              <span className="flex-1" />
+              <Button type="button" size="sm" variant="outline" disabled={disabled} onClick={(e) => { e.stopPropagation(); open(); }}>
+                Trocar
+              </Button>
+              <Button type="button" size="icon-sm" variant="ghost" aria-label="Remover o arquivo" disabled={disabled} onClick={(e) => { e.stopPropagation(); reset(); }}>
+                <XIcon />
+              </Button>
+            </div>
           </div>
         )}
       </div>

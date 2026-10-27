@@ -1,10 +1,13 @@
+import type { Metadata } from "next";
 import { RoleGate } from "@/components/auth/RoleGate";
-import { ModulePlaceholder } from "@/components/layout/ModulePlaceholder";
+import { DocumentosWorkspace } from "@/components/documentos/DocumentosWorkspace";
+
+export const metadata: Metadata = { title: "Análise de Documentos · Intelli AI" };
 
 export default function Page() {
   return (
     <RoleGate roles={["Admin", "Analista"]}>
-      <ModulePlaceholder title="Análise de Documentos" />
+      <DocumentosWorkspace />
     </RoleGate>
   );
 }

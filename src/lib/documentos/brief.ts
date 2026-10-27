@@ -36,30 +36,30 @@ export const SEVERITIES = ["alta", "media", "baixa"] as const;
 
 // "objetoAnalise" (e não "objectoAnalise"): o PRD tinha um typo.
 export const BriefSchema = z.object({
-  objetoAnalise: z.string().describe("Identificação do documento e escopo da análise, em 2 a 4 frases"),
-  metodologia: z.string().describe("Critérios e palavras-chave utilizados, em 1 a 3 frases"),
+  objetoAnalise: z.string().describe("Identificação do documento e escopo da análise, em 2 a 3 frases"),
+  metodologia: z.string().describe("Critérios e palavras-chave utilizados, em 1 a 2 frases"),
   achadosPrincipais: z
     .array(
       z.object({
         keyword: z.string().describe("A palavra-chave a que o achado se refere"),
-        finding: z.string().describe("O achado, objetivo e fiel ao documento"),
+        finding: z.string().describe("O achado, objetivo e fiel ao documento, em 1 ou 2 frases"),
         pageRef: z.number().describe("Página (marcador [Página N]) onde está o trecho"),
-        quote: z.string().describe("Trecho LITERAL e curto (até 200 caracteres) copiado do documento que sustenta o achado"),
+        quote: z.string().describe("Trecho LITERAL e curto (até 150 caracteres) copiado do documento que sustenta o achado"),
       }),
     )
-    .describe("Pelo menos um achado para cada palavra-chave que aparece no documento"),
+    .describe("Um achado para cada palavra-chave que aparece no documento (no máximo 2 por palavra-chave)"),
   analiseRiscos: z
     .array(
       z.object({
-        risk: z.string().describe("Ponto crítico, lacuna ou risco identificado no documento"),
+        risk: z.string().describe("Ponto crítico, lacuna ou risco identificado no documento, em 1 frase"),
         severity: z.enum(SEVERITIES),
         pageRef: z.number().describe("Página onde está o trecho que o sustenta"),
-        quote: z.string().describe("Trecho LITERAL e curto (até 200 caracteres) que sustenta o risco"),
+        quote: z.string().describe("Trecho LITERAL e curto (até 150 caracteres) que sustenta o risco"),
       }),
     )
-    .describe("De 2 a 6 riscos, só os que o texto do documento sustenta"),
-  conclusao: z.string().describe("Síntese executiva em 3 a 5 frases"),
-  recomendacoes: z.array(z.string()).describe("De 2 a 5 recomendações práticas"),
+    .describe("De 3 a 5 riscos, só os que o texto do documento sustenta"),
+  conclusao: z.string().describe("Síntese executiva em 3 frases"),
+  recomendacoes: z.array(z.string()).describe("De 3 a 4 recomendações práticas, cada uma em 1 frase"),
 });
 export type RawBrief = z.infer<typeof BriefSchema>;
 
@@ -194,7 +194,7 @@ export const BRIEF_SYSTEM = [
   "O texto do documento traz marcadores [Página N]. Use SEMPRE esses números nas referências de página.",
   "Todo achado e todo risco deve vir acompanhado de um trecho LITERAL do documento (campo quote, até 200 caracteres), copiado sem parafrasear, e da página em que ele está.",
   "Seja fiel ao texto: não invente cláusulas, números nem consequências que o documento não sustente. Se algo não consta, diga que não consta.",
-  "Redija de forma formal e concisa, em português do Brasil.",
+  "Redija de forma formal e CONCISA, em português do Brasil: frases curtas, sem repetir o que já foi dito em outra seção.",
 ].join("\n");
 
 export function buildBriefPrompt(opts: { documentBlock: string; analysisBlock?: string; keywords: readonly string[]; filename: string; partial: boolean }): string {

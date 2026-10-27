@@ -1,11 +1,14 @@
 import { highlightTerms } from "@/lib/documentos/highlight";
 import { cn } from "@/lib/utils";
 
+/** O extrator de PDF devolve títulos como "## CLÁUSULA 7": nos trechos citados o marcador só atrapalha a leitura. */
+export const withoutHeadingMarks = (text: string) => text.replace(/(^|\n)#{1,6}\s+/g, "$1");
+
 /** Texto com as palavras-chave marcadas (sem alterar o que está escrito: ignora caixa e acento ao procurar). */
 export function HighlightedText({ text, terms, className }: { text: string; terms: readonly string[]; className?: string }) {
   return (
     <span className={className}>
-      {highlightTerms(text, terms).map((seg, i) =>
+      {highlightTerms(withoutHeadingMarks(text), terms).map((seg, i) =>
         seg.mark ? (
           <mark key={i} className="rounded-sm bg-accent-docs/20 px-0.5 text-text-primary">
             {seg.text}
