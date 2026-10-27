@@ -1,0 +1,49 @@
+{
+  "_comentario": "Documentos SINTÉTICOS (nenhum dado real). Cada fato tem a página em que está (gabarito) e um trecho que o achado/citação deve conter.",
+  "contrato_ti_12p.pdf": {
+    "tipo": "contrato digital", "paginas": 12,
+    "fatos": [
+      { "keyword": "SLA", "page": 5, "contem": "99,7%" },
+      { "keyword": "LGPD", "page": 7, "contem": "24 horas" },
+      { "keyword": "multa", "page": 8, "contem": "1% ao dia" },
+      { "keyword": "garantia", "page": 9, "contem": "4%" },
+      { "keyword": "rescisão", "page": 10, "contem": "45 dias" }
+    ]
+  },
+  "contrato_fornecimento_10p.pdf": {
+    "tipo": "contrato digital (estrutura em capítulos e artigos)", "paginas": 10,
+    "fatos": [
+      { "keyword": "prazo de entrega", "page": 3, "contem": "45 dias" },
+      { "keyword": "garantia", "page": 5, "contem": "36 meses" },
+      { "keyword": "multa", "page": 7, "contem": "0,33%" },
+      { "keyword": "rescisão", "page": 9, "contem": "10 dias" },
+      { "keyword": "foro", "page": 10, "contem": "São Paulo" }
+    ]
+  },
+  "proposta_escaneada_3p.pdf": {
+    "tipo": "escaneado (imagem, passa pelo OCR)", "paginas": 3,
+    "fatos": [
+      { "keyword": "vigência", "page": 1, "contem": "18 meses" },
+      { "keyword": "valor", "page": 2, "contem": "52.300,00" },
+      { "keyword": "rescisão", "page": 3, "contem": "60 dias" }
+    ]
+  },
+  "relatorio_tabelas_6p.pdf": {
+    "tipo": "com tabelas", "paginas": 6,
+    "fatos": [
+      { "keyword": "SLA", "page": 2, "contem": "99,95%" },
+      { "keyword": "preços", "page": 3, "contem": "412,00" },
+      { "keyword": "prazos", "page": 4, "contem": "60" },
+      { "keyword": "penalidades", "page": 5, "contem": "0,5% ao dia" }
+    ]
+  },
+  "regulamento_90p.pdf": {
+    "tipo": "longo (mais de 80 páginas)", "paginas": 90,
+    "fatos": [
+      { "keyword": "licenciamento", "page": 14, "contem": "1.850,00" },
+      { "keyword": "auditoria", "page": 37, "contem": "semestrais" },
+      { "keyword": "sanções", "page": 63, "contem": "50.000,00" },
+      { "keyword": "vigência", "page": 88, "contem": "1º de março de 2027" }
+    ]
+  }
+}

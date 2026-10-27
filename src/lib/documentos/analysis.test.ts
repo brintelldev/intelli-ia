@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { AnalyzeBody, checkAnalysis, DIRECT_LIMIT_TOKENS, groupPages, locateSnippet, needsMapReduce, pagesToText, type RawAnalysis } from "./analysis";
+import { AnalyzeBody, checkAnalysis, lexicalOccurrences, DIRECT_LIMIT_TOKENS, groupPages, locateSnippet, needsMapReduce, pagesToText, type RawAnalysis } from "./analysis";
 
 const pages = [
   { number: 1, content: "CONTRATO DE PRESTAÇÃO DE SERVIÇOS. O objeto é o desenvolvimento do sistema de gestão documental." },
@@ -41,9 +41,10 @@ test("checkAnalysis: nota 0–100 inteira, página corrigida pelo trecho real, t
   assert.deepEqual(c.suggestions, ["a", "b"]);
 });
 
-test("checkAnalysis: uma entrada por palavra-chave pedida, na ordem; a que o modelo omitiu fica com 0; contagem só de verificadas", () => {
+test("checkAnalysis: uma entrada por palavra-chave pedida, na ordem; a que o modelo omitiu e não está no texto fica com 0; contagem só de verificadas", () => {
   const c = checkAnalysis(raw(), pages, ["SLA", "Multa", "rescisão"]);
-  assert.deepEqual(c.keywordMatches.map((k) => [k.keyword, k.count]), [["SLA", 0], ["Multa", 1], ["rescisão", 0]]);
+  // SLA: o modelo omitiu, mas está escrito na p. 2 (completada pela busca literal); rescisão: não existe no texto
+  assert.deepEqual(c.keywordMatches.map((k) => [k.keyword, k.count]), [["SLA", 1], ["Multa", 1], ["rescisão", 0]]);
   const multa = c.keywordMatches[1];
   assert.equal(multa.occurrences[0].page, 3, "a página 1 citada foi corrigida para a 3");
   assert.equal(multa.occurrences[1].verified, false);
@@ -79,4 +80,26 @@ test("AnalyzeBody: páginas obrigatórias, limites e padrões", () => {
   assert.ok(!AnalyzeBody.safeParse({ pages: [{ number: 1, content: "x".repeat(2_000_001) }] }).success);
   assert.ok(!AnalyzeBody.safeParse({ pages: [{ number: 1, content: "x" }], summary: { size: "gigante", audience: "tecnico" } }).success);
   assert.equal(AnalyzeBody.parse({ pages: [{ number: 1, content: "x" }], keywords: [" multa "] }).keywords[0], "multa", "apara espaços");
+});
+
+test("lexicalOccurrences: acha o termo escrito no texto (sem caixa/acento), com a frase em volta e a página certa", () => {
+  const ps = [
+    { number: 1, content: "Texto sem nada. Outra frase qualquer." },
+    { number: 2, content: "## CLÁUSULA 9. A MULTA de 2% incide sobre o saldo devedor; nada mais. Fim." },
+    { number: 3, content: "As multas moratórias são cumulativas.\nO resto é irrelevante." },
+  ];
+  const r = lexicalOccurrences("multa", ps);
+  assert.deepEqual(r.map((o) => o.page), [2, 3]);
+  assert.match(r[0].context, /^A MULTA de 2% incide sobre o saldo devedor;?$/, "a frase em volta, sem o título e sem o ## do extrator");
+  assert.ok(!r[0].context.startsWith("#"));
+  assert.equal(lexicalOccurrences("inexistente", ps).length, 0);
+  assert.equal(lexicalOccurrences("multa", ps, 1).length, 1, "respeita o máximo");
+});
+
+test("checkAnalysis: palavra-chave que o modelo deixou sem ocorrência mas está no texto é completada (verificada); quem já tem ocorrência verificada não muda", () => {
+  const ps = [{ number: 4, content: "Pena: multa de 0,5% ao dia sobre a parcela em atraso." }, { number: 7, content: "A garantia contratual é de 5% do valor do contrato." }];
+  const c = checkAnalysis({ relevanceBySection: [], taxonomy: [], keywordMatches: [{ keyword: "multa", occurrences: [] }, { keyword: "garantia", occurrences: [{ context: "garantia contratual é de 5% do valor", page: 7 }] }, { keyword: "foro", occurrences: [] }], summary: "", suggestions: [] }, ps, ["multa", "garantia", "foro"]);
+  assert.deepEqual([c.keywordMatches[0].count, c.keywordMatches[0].occurrences[0].page, c.keywordMatches[0].occurrences[0].verified], [1, 4, true]);
+  assert.equal(c.keywordMatches[1].occurrences.length, 1, "o que o modelo achou e foi verificado fica como está");
+  assert.deepEqual([c.keywordMatches[2].count, c.keywordMatches[2].occurrences.length], [0, 0], "ausente do texto: continua 0");
 });

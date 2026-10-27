@@ -10,7 +10,8 @@
     "test": "node --import tsx --test \"src/**/*.test.ts\" \"src/**/*.test.tsx\"",
     "test:db": "node --env-file=.env.local --import tsx --test \"src/**/*.db-test.ts\"",
     "typecheck": "next typegen && tsc --noEmit",
-    "check-models": "tsx scripts/check-models.ts"
+    "check-models": "tsx scripts/check-models.ts",
+    "demo1-suite": "tsx scripts/demo1-suite.ts"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "4.0.88",

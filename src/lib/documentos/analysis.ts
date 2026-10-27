@@ -2,6 +2,7 @@ import "@/lib/zod-pt";
 import { z } from "zod";
 import { estimateTokens } from "@/lib/pdf/document";
 import { LENGTHS, TONES, TemplateSchema } from "@/lib/templates";
+import { findTerms } from "./highlight";
 
 // Análise de um documento por palavras-chave (itens 112 a 114): relevância por seção, trechos onde cada
 // termo aparece, taxonomia e resumo. Este módulo é puro: schema, prompts e a VALIDAÇÃO do que o modelo diz
@@ -91,6 +92,27 @@ const clampPage = (n: number, pages: readonly PageIn[]) => {
 };
 
 /**
+ * Ocorrências LITERAIS de uma palavra-chave no texto (sem caixa nem acento; o termo começa numa palavra), com a frase em
+ * volta como contexto. É o complemento determinístico da busca do modelo, que em documento longo às vezes deixa passar um
+ * termo que está escrito no texto.
+ */
+export function lexicalOccurrences(keyword: string, pages: readonly PageIn[], max = 3): { context: string; page: number }[] {
+  const out: { context: string; page: number }[] = [];
+  for (const p of pages) {
+    for (const [start] of findTerms(p.content, [keyword])) {
+      const before = p.content.slice(Math.max(0, start - 160), start);
+      const from = start - (before.length - Math.max(before.lastIndexOf(". "), before.lastIndexOf("\n"), -1) - 1);
+      const after = p.content.slice(start, start + 200);
+      const cut = after.search(/[.;]\s|\n/);
+      const context = p.content.slice(from < 0 ? 0 : from, start + (cut === -1 ? after.length : cut + 1)).replace(/^[#\s]+/, "").trim();
+      if (context.length >= 12 && !out.some((o) => o.page === p.number && o.context === context)) out.push({ context, page: p.number });
+      if (out.length >= max) return out;
+    }
+  }
+  return out;
+}
+
+/**
  * O modelo erra número de página e inventa trecho. Aqui: nota 0 a 100 inteira; o trecho é procurado no documento e a
  * página é CORRIGIDA para onde ele realmente está; sem o trecho no documento, `verified: false` (a tela não deve
  * destacá-lo) e a página é só limitada ao intervalo existente.
@@ -118,10 +140,12 @@ export function checkAnalysis(raw: RawAnalysis, pages: readonly PageIn[], keywor
   const asked = keywords.length ? keywords : (raw.keywordMatches ?? []).map((m) => m.keyword);
   const keywordMatches = asked.map((keyword) => {
     const m = byKey.get(norm(keyword));
-    const occurrences = (m?.occurrences ?? []).slice(0, 5).map((o) => {
+    const fromModel = (m?.occurrences ?? []).slice(0, 5).map((o) => {
       const found = locateSnippet(o.context, pages, o.page);
       return { context: o.context.trim(), page: found ?? clampPage(o.page, pages), verified: found !== null };
     });
+    // nenhuma ocorrência VERIFICADA do modelo: completa com a busca literal no texto (verificadas por construção)
+    const occurrences = fromModel.some((o) => o.verified) ? fromModel : [...fromModel, ...lexicalOccurrences(keyword, pages).map((o) => ({ ...o, verified: true }))];
     return { keyword, count: occurrences.filter((o) => o.verified).length, occurrences };
   });
 
@@ -142,7 +166,8 @@ export const ANALYSIS_SYSTEM = [
   "Você é um analista que revisa documentos longos (contratos, normas, relatórios) para um profissional.",
   "O texto do documento traz marcadores [Página N]. Use SEMPRE esses números nas referências de página.",
   "Todo trecho que você citar (campo snippet ou context) deve ser copiado LITERALMENTE do documento, curto (até 200 caracteres), sem parafrasear.",
-  "Não invente informação: se uma palavra-chave não aparece no documento, devolva a lista de ocorrências vazia para ela.",
+  "Procure cada palavra-chave em TODO o documento, do início ao fim, inclusive por sinônimos e expressões equivalentes (por exemplo, \"vigência\" também aparece como \"entra em vigor\"; \"multa\" como \"penalidade pecuniária\").",
+  "Não invente informação: só devolva a lista de ocorrências vazia para uma palavra-chave se realmente não houver nada equivalente no documento.",
   "Escreva em português do Brasil.",
 ].join("\n");
 

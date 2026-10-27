@@ -59,7 +59,7 @@ test("buildExportData sem parecer: resumo, relevância, palavras-chave e pontos 
   assert.match(d.sections[1].content, /- \*\*SLA\*\*: 90\/100 \(p\. 3\)/, "a página corrigida pela conferência");
   assert.match(d.sections[1].content, /\*\*Foro\*\*: 10\/100 \(p\. 4, trecho não localizado\)/);
   assert.match(d.sections[2].content, /- \*\*SLA\*\*: 1 ocorrência \(p\. 3\)/);
-  assert.match(d.sections[2].content, /- \*\*multa\*\*: 0 ocorrências$/m);
+  assert.match(d.sections[2].content, /- \*\*multa\*\*: 1 ocorrência \(p\. 4\)$/m, "o modelo omitiu, mas está no texto: completada pela busca literal");
   assert.deepEqual(d.metadata.Páginas, 2);
   assert.equal(d.metadata["Palavras-chave"], "SLA, multa");
 });
@@ -76,7 +76,7 @@ test("buildExportData: tabela do Excel com seções e palavras-chave; sem análi
   const d = buildExportData({ filename: "c.pdf", pages, keywords: [], analysis, date: "d" });
   assert.deepEqual(d.table?.columns, ["Tipo", "Item", "Relevância / ocorrências", "Páginas"]);
   assert.deepEqual(d.table?.rows[0], ["Seção", "SLA", 90, "p. 3"]);
-  assert.deepEqual(d.table?.rows.at(-1), ["Palavra-chave", "multa", 0, ""]);
+  assert.deepEqual(d.table?.rows.at(-1), ["Palavra-chave", "multa", 1, "p. 4"]);
   const empty = buildExportData({ filename: "c.pdf", pages, keywords: [], date: "d" });
   assert.equal(empty.sections.length, 1);
   assert.equal(empty.table, undefined);
