@@ -1,3 +1,4 @@
+import { withPresentation } from "@/lib/replay";
 import "@/lib/zod-pt";
 import { generateText, Output } from "ai";
 import { z } from "zod";
@@ -11,7 +12,7 @@ import { assertWithinBudget, track, usageMeta } from "@/lib/usage";
 // configurado do módulo como principal (o principal fica de reserva). Com o limite de custo do dia estourado: 429.
 const TIMEOUT_MS = 25_000;
 
-export async function POST(req: Request) {
+async function livePOST(req: Request) {
   const t0 = Date.now();
   try {
     const session = await requireRole(["Admin", "Analista"]);
@@ -27,7 +28,7 @@ export async function POST(req: Request) {
         model: sel.model,
         temperature: 0.2,
         maxOutputTokens: 400,
-        abortSignal: AbortSignal.timeout(TIMEOUT_MS),
+        abortSignal: AbortSignal.any([req.signal, AbortSignal.timeout(TIMEOUT_MS)]),
         system: withUntrustedRule(KEYWORD_SYSTEM),
         prompt: [
           wrapUntrusted(excerptForPrompt(text), { id: 1, source: "documento enviado" }),
@@ -58,3 +59,5 @@ export async function POST(req: Request) {
     return errorResponse(e);
   }
 }
+
+export async function POST(req: Request) { return withPresentation(req, "suggest-keywords", "demo1", "keyword_suggest", livePOST); }

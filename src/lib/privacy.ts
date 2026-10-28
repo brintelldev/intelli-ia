@@ -23,6 +23,14 @@ export async function purgeChatCache(): Promise<number> {
   return (await prisma.responseCache.deleteMany({ where: { module: "demo3" } })).count;
 }
 
+/** Gravações contêm a saída: apagar o dado também deve apagar as suas cópias de replay. */
+export async function purgeReplay(userId: string, targetId?: string) {
+  await prisma.responseCache.deleteMany({ where: { module: "replay", OR: [
+    { response: { path: ["userId"], equals: userId } },
+    ...(targetId ? [{ response: { path: ["body"], string_contains: targetId } }] : []),
+  ] } });
+}
+
 function audit(actor: Actor, kind: string, counts: Record<string, number>) {
   void track({ module: "demo4", action: "data_deleted", userId: actor.userId, status: "success", metadata: { kind, ...counts } });
 }
@@ -41,6 +49,7 @@ export async function deleteDocument(sourceId: string, actor: Actor) {
     prisma.documentSource.delete({ where: { id: sourceId } }),
   ]);
   await purgeChatCache();
+  await purgeReplay(src.userId, sourceId);
   audit(actor, "document", { documents: 1, chunks: chunks.count });
   return { documents: 1, chunks: chunks.count };
 }
@@ -56,6 +65,7 @@ export async function deleteChatSession(sessionId: string, actor: Actor) {
     prisma.chatSession.delete({ where: { id: sessionId } }), // as mensagens saem em cascata
   ]);
   await purgeChatCache();
+  await purgeReplay(session.userId, sessionId);
   audit(actor, "chat", { chats: 1, messages, shareLinks: links.count });
   return { chats: 1, messages, shareLinks: links.count };
 }
@@ -70,6 +80,7 @@ export async function deleteResearchReport(reportId: string, actor: Actor) {
     prisma.chatSession.updateMany({ where: { threadId: reportId }, data: { threadId: null } }),
     prisma.researchReport.delete({ where: { id: reportId } }),
   ]);
+  await purgeReplay(report.userId, reportId);
   audit(actor, "report", { reports: 1, shareLinks: links.count });
   return { reports: 1, shareLinks: links.count };
 }
@@ -124,6 +135,7 @@ export async function deleteUserData(userId: string, actor: Actor) {
     };
   });
   await purgeChatCache();
+  await purgeReplay(userId);
   audit(actor, "user", result);
   return result;
 }

@@ -23,7 +23,7 @@ export function HomeHeader() {
   return (
     <header className="fixed inset-x-0 top-0 z-40 h-14 border-b border-border bg-background/80 backdrop-blur">
       <div className="mx-auto flex h-full max-w-6xl items-center justify-between gap-4 px-4 md:px-6">
-        <Link href="/home" aria-label="Intelli AI, início" className="rounded-md outline-none focus-visible:ring-2 focus-visible:ring-accent-primary">
+        <Link href="/home" aria-label="Intelli Insights, início" className="rounded-md outline-none focus-visible:ring-2 focus-visible:ring-accent-primary">
           <Logo className="text-lg" />
         </Link>
 

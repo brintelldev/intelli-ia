@@ -1,5 +1,6 @@
 "use client";
 
+import { ReplayIndicator } from "@/components/shared/ReplayIndicator";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
 import { pageTitle } from "@/lib/modules";
@@ -12,7 +13,7 @@ export function TopBar({ children }: { children?: ReactNode }) {
     <header className="sticky top-0 z-30 flex h-14 shrink-0 items-center justify-between gap-4 border-b border-border bg-background/80 px-4 backdrop-blur md:px-6">
       <nav aria-label="Você está em">
         <ol className="flex items-center gap-2 text-sm">
-          <li className="text-text-muted">Intelli AI</li>
+          <li className="text-text-muted">Intelli Insights</li>
           {t && (
             <>
               <li aria-hidden="true" className="text-text-muted">
@@ -35,7 +36,7 @@ export function TopBar({ children }: { children?: ReactNode }) {
           )}
         </ol>
       </nav>
-      <div className="flex items-center gap-2">{children}</div>
+      <div className="flex items-center gap-2"><ReplayIndicator />{children}</div>
     </header>
   );
 }

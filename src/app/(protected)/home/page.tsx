@@ -9,7 +9,7 @@ import { canAccess, isRole } from "@/lib/rbac";
 import { getSession } from "@/lib/session";
 import { cn } from "@/lib/utils";
 
-export const metadata: Metadata = { title: "Início · Intelli AI" };
+export const metadata: Metadata = { title: "Início · Intelli Insights" };
 
 // Textos do hero seguem o protótipo aprovado no Stitch (em inglês); navegação e descrições dos
 // módulos, em PT-BR.
@@ -17,8 +17,8 @@ export default function HomePage() {
   return (
     <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col items-center gap-10 px-4 pt-14 pb-12 md:pt-24">
       <div className="animate-enter flex flex-col items-center gap-3 text-center">
-        <h1 className="text-4xl font-extrabold tracking-tight md:text-5xl">What can we build today?</h1>
-        <p className="text-text-secondary">Access all your intelligent modules from one command bar.</p>
+        <h1 className="text-4xl font-extrabold tracking-tight md:text-5xl">O que vamos fazer hoje?</h1>
+        <p className="text-text-secondary">Acesse seus módulos de inteligência em um só lugar.</p>
       </div>
       <Suspense fallback={<HeroSkeleton />}>
         <CommandAndModules />

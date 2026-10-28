@@ -1,10 +1,2 @@
-import { RoleGate } from "@/components/auth/RoleGate";
-import { ModulePlaceholder } from "@/components/layout/ModulePlaceholder";
-
-export default function Page() {
-  return (
-    <RoleGate roles={["Admin", "Analista"]}>
-      <ModulePlaceholder title="Pesquisa Web" />
-    </RoleGate>
-  );
-}
+import{RoleGate}from'@/components/auth/RoleGate';import{ResearchWorkspace}from'@/components/pesquisa/ResearchWorkspace';
+export default function Page(){return <RoleGate roles={['Admin','Analista']}><ResearchWorkspace/></RoleGate>}

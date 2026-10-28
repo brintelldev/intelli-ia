@@ -1,0 +1,5 @@
+import { withPresentation } from "@/lib/replay";
+import{requireRole,errorResponse}from'@/lib/session';import{IngestBody}from'@/lib/chat/ingest-core';import{ingestDocument}from'@/lib/chat/ingest';import{assertWithinBudget}from'@/lib/usage';import{prisma}from'@/lib/prisma';
+async function livePOST(req:Request){try{const s=await requireRole(['Admin','Analista']);const length=Number(req.headers.get('content-length'));if(length>12_000_000)return Response.json({error:'O texto excede o limite permitido.'},{status:413});const parsed=IngestBody.safeParse(await req.json().catch(()=>null));if(!parsed.success)return Response.json({error:parsed.error.issues[0]?.message},{status:400});const input=parsed.data;if(input.sessionId&&!await prisma.chatSession.findFirst({where:{id:input.sessionId,userId:s.user.id}}))return Response.json({error:'Conversa não encontrada.'},{status:404});await assertWithinBudget(s.user.id,'demo3');return Response.json(await ingestDocument(input,{userId:s.user.id,signal:req.signal}));}catch(e){return errorResponse(e);}}
+
+export async function POST(req: Request) { return withPresentation(req, "ingest", "demo3", "document_ingest", livePOST); }

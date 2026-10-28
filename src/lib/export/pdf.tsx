@@ -52,10 +52,10 @@ function Body({ md }: { md: string }) {
 
 function Doc({ data }: { data: ExportData }) {
   return (
-    <Document title={data.title} author="Intelli AI" creator="Intelli AI">
+    <Document title={data.title} author="Intelli Insights" creator="Intelli Insights">
       <Page size="A4" style={s.page}>
         <View style={s.header} fixed>
-          <Text>Intelli AI</Text>
+          <Text>Intelli Insights</Text>
           <Text>{data.title.length > 70 ? data.title.slice(0, 67) + "…" : data.title}</Text>
         </View>
         <Text style={s.title}>{data.title}</Text>

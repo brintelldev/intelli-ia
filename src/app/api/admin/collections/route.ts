@@ -1,0 +1,3 @@
+import{requireRole,errorResponse}from'@/lib/session';import{prisma}from'@/lib/prisma';import{CollectionBody,saveCollection}from'@/lib/chat/collections';
+export async function GET(){try{await requireRole(['Admin']);return Response.json(await prisma.collection.findMany({orderBy:{name:'asc'}}));}catch(e){return errorResponse(e);}}
+export async function POST(req:Request){try{const s=await requireRole(['Admin']);const p=CollectionBody.safeParse(await req.json().catch(()=>null));if(!p.success)return Response.json({error:p.error.issues[0]?.message},{status:400});return Response.json(await saveCollection(p.data,s.user.id),{status:201});}catch(e){return errorResponse(e);}}

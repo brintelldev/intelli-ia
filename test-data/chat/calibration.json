@@ -1,0 +1,15 @@
+{
+  "positive": [
+    {"question":"Qual a disponibilidade mensal mínima do SLA no contrato de serviços de TI?","file":"contrato_ti_12p.pdf","page":5},
+    {"question":"Em quanto tempo deve ser comunicado um incidente de dados pessoais no contrato de TI?","file":"contrato_ti_12p.pdf","page":7},
+    {"question":"Qual é a multa diária por atraso no contrato de serviços de TI?","file":"contrato_ti_12p.pdf","page":8},
+    {"question":"Qual o prazo de entrega dos equipamentos no contrato de fornecimento?","file":"contrato_fornecimento_10p.pdf","page":3},
+    {"question":"Por quantos meses os equipamentos fornecidos têm garantia?","file":"contrato_fornecimento_10p.pdf","page":5},
+    {"question":"Qual o foro competente no contrato de fornecimento de equipamentos?","file":"contrato_fornecimento_10p.pdf","page":10},
+    {"question":"Qual a disponibilidade mensal na tabela de níveis de serviço?","file":"relatorio_tabelas_6p.pdf","page":2},
+    {"question":"Qual o valor unitário das licenças no regulamento técnico?","file":"regulamento_90p.pdf","page":14},
+    {"question":"Qual a frequência das auditorias previstas no regulamento?","file":"regulamento_90p.pdf","page":37},
+    {"question":"Quando entra em vigor o regulamento?","file":"regulamento_90p.pdf","page":88}
+  ],
+  "negative": ["Como preparar um bolo de cenoura?","Quem venceu a Copa do Mundo de 1930?","Qual a distância média entre a Terra e a Lua?","O que é mitose?","Quais planetas do Sistema Solar são gigantes gasosos?","Qual a origem histórica da capoeira?","Como afinar um violino?","Como calcular a área de um hexágono regular?","Qual a biografia de Clarice Lispector?","Como acontece a digestão de lipídios?"]
+}

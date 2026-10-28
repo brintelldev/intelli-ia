@@ -1,6 +1,8 @@
-import { anthropic } from "@ai-sdk/anthropic";
-import { google } from "@ai-sdk/google";
-import { openai } from "@ai-sdk/openai";
+import{missingProviderKeys}from'./provider-availability';
+import {createProviderFetch,PROVIDER_TIMEOUT_MS,PROVIDER_HEADERS_TIMEOUT_MS} from "./provider-fetch";
+import { createAnthropic } from "@ai-sdk/anthropic";
+import { createGoogleGenerativeAI } from "@ai-sdk/google";
+import { createOpenAI } from "@ai-sdk/openai";
 import type { LanguageModel } from "ai";
 import { pickModels, withFallbackModel, type ModelState, type Picked, type RawModel } from "@/lib/llm-core";
 import { apiModelName, providerOf, type ModelId } from "@/lib/models";
@@ -10,6 +12,11 @@ import { prisma } from "@/lib/prisma";
 // com a chave dele. Quem escolhe o modelo é o banco (LlmConfig, User.modelOverride, AppSetting),
 // lido a cada chamada: o Admin troca no painel e a próxima requisição já usa o modelo novo.
 // A lógica de escolha e de fallback (sem banco) está em lib/llm-core.ts.
+
+const boundedFetch=createProviderFetch(fetch,PROVIDER_TIMEOUT_MS,PROVIDER_HEADERS_TIMEOUT_MS);
+const anthropic=createAnthropic({fetch:boundedFetch});
+const google=createGoogleGenerativeAI({fetch:boundedFetch});
+const openai=createOpenAI({fetch:boundedFetch});
 
 export type ModuleKey = "demo1" | "demo2" | "demo3";
 
@@ -48,7 +55,7 @@ export async function getDisabledProviders(): Promise<string[]> {
 
 export async function getModel(
   module: ModuleKey,
-  opts: { userId?: string | null; overrideModelId?: string | null; preferFallback?: boolean } = {},
+  opts: { userId?: string | null; overrideModelId?: string | null; preferFallback?: boolean; allowUnconfiguredForCache?:boolean } = {},
 ): Promise<ModelSelection> {
   const [configs, user, disabledProviders] = await Promise.all([
     prisma.llmConfig.findMany({ where: { module: { in: [module, "global"] } } }),
@@ -58,12 +65,14 @@ export async function getModel(
     getDisabledProviders(),
   ]);
 
+  const missing=missingProviderKeys(process.env);
   const picked = pickModels({
     override: opts.overrideModelId,
     userOverride: user?.modelOverride,
     module: configs.find((c) => c.module === module) ?? null,
     global: configs.find((c) => c.module === "global") ?? null,
     disabledProviders,
+    unconfiguredProviders:opts.allowUnconfiguredForCache&&missing.length===3?[]:missing,
     preferFallback: opts.preferFallback,
   });
 

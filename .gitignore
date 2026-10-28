@@ -44,3 +44,9 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 src/generated
+
+# backups e artefatos privados de operação
+.backups/
+*.dump
+
+/.local-runtime/

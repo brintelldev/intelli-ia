@@ -234,6 +234,7 @@ export function DocumentosWorkspace() {
             <h2 className="text-sm font-semibold">Exportar</h2>
             <ExportButtons
               module="demo1"
+              approvalAction={finalBrief ? "brief_export" : undefined}
               disabled={!finalAnalysis || working}
               getData={() =>
                 buildExportData({

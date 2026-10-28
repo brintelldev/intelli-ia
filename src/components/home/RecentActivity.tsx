@@ -24,7 +24,7 @@ export async function RecentActivity() {
   return (
     <section aria-labelledby="recent-activity" className="w-full max-w-5xl">
       <h2 id="recent-activity" className="mb-3 text-xs font-semibold tracking-widest text-text-muted uppercase">
-        Recent Activity
+        Atividade recente
       </h2>
       {events.length === 0 ? (
         <p className="rounded-xl border border-dashed border-border px-4 py-6 text-center text-sm text-text-muted">

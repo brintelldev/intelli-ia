@@ -1,0 +1,3 @@
+import{track}from'@/lib/usage';import type{UsageAction}from'@/lib/usage-core';
+/** Mudanças por campo: mantém before/after simples, completos e sem conteúdo/credenciais. */
+export function auditChanges(action:UsageAction,userId:string,scope:string,before:Record<string,unknown>,after:Record<string,unknown>){for(const[field,value]of Object.entries(after)){if(field==='password'||field==='secret'||JSON.stringify(before[field])===JSON.stringify(value))continue;const simple=(v:unknown)=>typeof v==='object'&&v!==null?JSON.stringify(v):v??null;void track({module:'demo4',action,userId,status:'success',metadata:{scope,field,before:simple(before[field]),after:simple(value)}});}}

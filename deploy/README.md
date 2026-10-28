@@ -92,3 +92,54 @@ docker compose -f compose.yaml up -d --build   # o serviço migrate roda sozinho
 ```
 
 Nunca use `docker compose down -v` em produção: apaga o banco de dados.
+
+## Backup e restauração verificada
+
+```bash
+BACKUP_DIR=/var/backups/intellisuite ./scripts/backup.sh
+./scripts/restore-check.sh /var/backups/intellisuite/intellisuite-AAAAmmddTHHMMSSZ.dump
+```
+
+O backup usa `pg_dump --format=custom`, `umask 077`, escrita temporária e rename atômico. Não remove cópias anteriores. Para a infraestrutura local sem `.env.production`, informe `POSTGRES_CONTAINER=intellisuite-postgres-1`. Guarde uma cópia cifrada em outro dispositivo conforme a política da organização; não envie dumps pelo Git ou pelo chat.
+
+`restore-check.sh` cria um Postgres descartável **sem rede**, restaura o dump, verifica pgvector, dimensão 384 e trechos órfãos e remove somente esse container ao terminar. Nunca aponta para o banco de produção. Backups contêm dados do app; uma exclusão no sistema não apaga cópias antigas já arquivadas.
+
+## Agendamento, disco, firewall e apresentação
+
+O arquivo `deploy/cron/intellisuite.example` contém backup diário, smoke horário e limpeza semanal de imagens dangling do próprio app. Revise usuário/caminhos e instale no VPS somente depois de um smoke bem-sucedido. Configure as senhas do smoke e, se desejar alerta, `SMOKE_ALERT_WEBHOOK` num arquivo `/etc/intellisuite-monitor.env` com permissão 600. Sem webhook o monitor registra a falha localmente e retorna código 1; não envia mensagem.
+
+Confirme primeiro a porta SSH real do host. Para SSH padrão, o objetivo é liberar somente 22/80/443; não publique 3000, 5432, 5001 ou 8080. Os serviços internos do Compose não precisam de portas públicas.
+
+```bash
+sudo ufw allow 22/tcp
+sudo ufw allow 80/tcp
+sudo ufw allow 443/tcp
+sudo ufw enable
+sudo ufw status verbose
+```
+
+Depois, programe um reboot de teste e confirme que Docker/Nginx estão habilitados no boot e que todos os serviços retornam. O Compose usa `restart: unless-stopped`. **Firewall, cron, reboot, HTTPS e alerta externo não foram instalados/verificados no VPS nesta execução: dependem de acesso ao host e de um destino de alerta definido pelo operador.**
+
+## Cópia local sem internet
+
+A preparação não copia chaves de API. Execute no computador da apresentação enquanto ainda houver internet, depois de gravar o roteiro e aquecer os embeddings:
+
+```bash
+docker build --target runner -t intellisuite:verification .
+# Imagens de postgres/docling/searxng devem estar baixadas antes de desligar a rede.
+POSTGRES_CONTAINER=intellisuite-postgres-1 BACKUP_DIR=/caminho/privado ./scripts/backup.sh
+./scripts/prepare-offline.sh /caminho/privado/intellisuite-AAAAmmddTHHMMSSZ.dump
+./scripts/offline-start.sh   # mantém a ponte local no terminal
+# Em outro terminal:
+./scripts/smoke.sh http://127.0.0.1:3030
+```
+
+A cópia usa outro volume de banco e porta 3030 apenas em loopback, restaura **somente na criação do volume vazio**, ativa o modo `fallback` na cópia e monta `.cache` dos embeddings como leitura. A rede Docker é `internal: true`, sem saída para internet. O Docker não publica portas dessa rede neste runtime; `offline-start.sh` usa uma ponte Node no host, escutando somente `127.0.0.1:3030`, que encaminha os bytes por stdin/stdout de `docker exec` ao loopback do app. Nenhuma rede com internet é adicionada aos containers. Mantenha o processo da ponte aberto; Ctrl+C fecha somente a ponte. Serviços opcionais podem demorar a iniciar; confira `/api/health`. O smoke usa credenciais do banco restaurado; passe `SMOKE_*_PASSWORD` se elas foram alteradas.
+
+Não substitua o dump esperando que um volume já inicializado seja restaurado novamente. Para outra cópia, use outro nome de projeto/volume. O banco principal fica separado. Para transportar a stack a outro computador, leve o dump privado, `.cache`, este checkout e imagens exportadas com `docker save`; no destino use `docker load`, gere novos segredos locais e confira arquitetura arm64/amd64. O roteiro de segurança usa o PDF digital; prepare e verifique separadamente os modelos de OCR antes de depender de documentos escaneados offline.
+
+Ao concluir um ensaio, `docker compose --env-file .env.offline -p intellisuite-offline -f compose.offline.yaml down` para a cópia preserva o seu banco restaurado. Nenhuma configuração do banco principal é alterada por essa cópia.
+
+**Ensaio local de 27/10/2026:** backend carregou embeddings do cache sem download; saúde dos três serviços e smoke de perfis/stream passaram na rede interna. Saída externa do app foi testada e bloqueada. O acesso de loopback exige a ponte Node descrita acima. O backup privado fica em `.backups/` (ignorado pelo Git), e os segredos novos da cópia ficam em `.env.offline`. O VPS ainda requer as validações próprias do host.
+
+O roteiro inteiro também passou na cópia sem internet: seis etapas usaram replay e a pesquisa atingiu um cache local válido. No QA sem caches normais, as sete etapas usaram replay. O smoke confirmou stream em cinco linhas (primeira em 0,05 s e última em 4,07 s), sem buffering.

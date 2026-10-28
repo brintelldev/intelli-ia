@@ -1,0 +1,10 @@
+// Verificação real com consulta pública e Haiku; usa chaves do ambiente, nunca as imprime.
+import {randomUUID} from 'node:crypto';import {runResearch,DEFAULT_RESEARCH_TEMPLATE} from '../src/lib/pesquisa/agent';import {searchSources} from '../src/lib/pesquisa/sources';import {checkRobots} from '../src/lib/pesquisa/robots';import {extract} from '../src/lib/pesquisa/search';import {scrape} from '../src/lib/pesquisa/scraper';import {indexResearch} from '../src/lib/pesquisa/index-research';import {getModel} from '../src/lib/llm';import {prisma} from '../src/lib/prisma';
+async function main(){const userId=`research-smoke-${randomUUID()}`;const start=Date.now();let steps=0;try{
+ const selected=await getModel('demo2',{overrideModelId:'anthropic:claude-haiku-5-5'});
+ const result=await runResearch({query:'Quais são os princípios da proteção de dados da LGPD brasileira?',filter:'gov',template:{...DEFAULT_RESEARCH_TEMPLATE,format:{...DEFAULT_RESEARCH_TEMPLATE.format,length:'curto'}},models:{main:selected.model,fast:selected.model},settings:selected.settings,writer:{write:()=>{steps++;}},deps:{search:searchSources,robots:checkRobots,extract,scrape},index:(sources,contents,report)=>indexResearch(userId,'LGPD',sources,contents,report)});
+ if(result.phase!=='final')throw Error('relatório incompleto');const indexed=await prisma.documentSource.count({where:{userId}});
+ if(result.indexFailed||indexed===0||result.report.sections.length!==6)throw Error('aceite da pesquisa não atingido');
+ console.log(JSON.stringify({ms:Date.now()-start,steps,queries:result.queries,sources:result.sources.length,collected:result.sources.filter(s=>s.collected).length,blocked:result.sources.filter(s=>!s.robotsAllowed).length,headings:result.report.sections.map(s=>s.heading),indexed,model:selected.state.activeModelId,usage:result.mainUsage}));
+ }finally{await prisma.documentChunk.deleteMany({where:{userId}});await prisma.documentSource.deleteMany({where:{userId}});await prisma.$disconnect();}}
+main().catch(()=>{console.error('Falha na verificação de pesquisa; detalhes sensíveis omitidos.');process.exitCode=1;});

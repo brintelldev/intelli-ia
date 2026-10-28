@@ -9,6 +9,7 @@ export type ModelOption = {
   label: string;
   provider: string;
   providerLabel: string;
+  replayOnly?: boolean;
   inputPerM: number | null;
   outputPerM: number | null;
 };
@@ -50,6 +51,12 @@ const money = (n: number) => `US$ ${n < 1 ? n.toFixed(2) : String(n)}`;
 
 // Uma busca por sessão de página: vários seletores na mesma tela dividem a resposta.
 let cached: Promise<ModelOption[]> | undefined;
+export function invalidateModelCatalog() {
+  cached = undefined;
+  window.dispatchEvent(new Event("intelli-models-changed"));
+  localStorage.setItem("intelli-models-changed", String(Date.now()));
+}
+
 function loadModels(): Promise<ModelOption[]> {
   cached ??= fetch("/api/models")
     .then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
@@ -88,9 +95,18 @@ export function ModelSelector({
   useEffect(() => {
     if (provided) return;
     let alive = true;
-    loadModels().then((m) => alive && setFetched(m), () => alive && setFailed(true));
+    const load = () => loadModels().then((m) => { if (alive) { setFetched(m); setFailed(false); } }, () => alive && setFailed(true));
+    const refresh = () => { cached = undefined; void load(); };
+    void load();
+    window.addEventListener("intelli-models-changed", refresh);
+    window.addEventListener("focus", refresh);
+    const storage = (event: StorageEvent) => { if (event.key === "intelli-models-changed") refresh(); };
+    window.addEventListener("storage", storage);
     return () => {
       alive = false;
+      window.removeEventListener("intelli-models-changed", refresh);
+      window.removeEventListener("focus", refresh);
+      window.removeEventListener("storage", storage);
     };
   }, [provided]);
 
@@ -101,7 +117,7 @@ export function ModelSelector({
   const selected = models?.find((m) => m.id === value);
   const items = [
     ...(allowDefault ? [{ value: DEFAULT_MODEL, label: "Padrão do sistema" }] : []),
-    ...(models ?? []).map((m) => ({ value: m.id, label: m.label })),
+    ...(models ?? []).map((m) => ({ value: m.id, label: m.label+(m.replayOnly?" · gravação":"") })),
   ];
 
   return (
@@ -117,7 +133,7 @@ export function ModelSelector({
             selected ? (
               <span className="flex items-center gap-2">
                 <ProviderMark provider={selected.provider} />
-                {selected.label}
+                {selected.label}{selected.replayOnly?" · gravação":""}
               </span>
             ) : (
               <span className="text-text-secondary">{!models && !failed ? "Carregando modelos…" : "Padrão do sistema"}</span>
@@ -141,10 +157,10 @@ export function ModelSelector({
               <span className="flex w-full items-center gap-2">
                 <ProviderMark provider={m.provider} />
                 <span className="flex min-w-0 flex-1 flex-col">
-                  <span>{m.label}</span>
+                  <span>{m.label}{m.replayOnly?" · gravação":""}</span>
                   <span className="text-xs text-text-muted">
-                    {m.providerLabel}
-                    {m.inputPerM != null && m.outputPerM != null && ` · ${money(m.inputPerM)} entrada / ${money(m.outputPerM)} saída por 1M tokens`}
+                    {m.replayOnly?"Somente entradas já gravadas":m.providerLabel}
+                    {!m.replayOnly && m.inputPerM != null && m.outputPerM != null && ` · ${money(m.inputPerM)} entrada / ${money(m.outputPerM)} saída por 1M tokens`}
                   </span>
                 </span>
                 {tier && <span className={cn("rounded-full border px-1.5 py-0.5 text-[10px] font-medium", TIER_STYLE[tier])}>{tier}</span>}

@@ -13,7 +13,7 @@ export function Logo({ className, textClassName }: { className?: string; textCla
         />
         <circle cx="12" cy="12" r="3" fill="var(--accent-primary)" />
       </svg>
-      <span className={textClassName}>Intelli AI</span>
+      <span className={textClassName}>Intelli Insights</span>
     </span>
   );
 }

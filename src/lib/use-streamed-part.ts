@@ -1,4 +1,5 @@
 "use client";
+import { presentationFetch } from "@/lib/presentation-fetch";
 
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport, type UIMessage } from "ai";
@@ -12,7 +13,7 @@ import { parseApiError, type ApiError } from "@/lib/documentos/workspace";
  * O corpo da requisição é o objeto que `run` recebe (a rota lê esse JSON; o `useChat` acrescenta campos que ela ignora).
  */
 export function useStreamedPart<M extends UIMessage, D extends { phase: string }>(api: string, type: `data-${string}`) {
-  const transport = useMemo(() => new DefaultChatTransport({ api }), [api]);
+  const transport = useMemo(() => new DefaultChatTransport({ api, fetch: presentationFetch }), [api]);
   const chat = useChat<M>({ transport });
   const assistants = chat.messages.filter((m) => m.role === "assistant");
   const last = assistants.at(-1);
@@ -40,5 +41,5 @@ export function useStreamedPart<M extends UIMessage, D extends { phase: string }
     [clearError, sendMessage],
   );
 
-  return { part, steps, busy, error, run, reset, stop };
+  return { part, latest, steps, busy, error, run, reset, stop };
 }

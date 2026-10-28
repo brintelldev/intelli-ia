@@ -24,6 +24,7 @@ export type PickInput = {
   module: ConfigRow | null;
   global: ConfigRow | null;
   disabledProviders: readonly string[];
+  unconfiguredProviders?: readonly string[];
   /**
    * Tarefa auxiliar e barata (sugerir palavras-chave): usa o modelo de FALLBACK configurado como principal
    * e o de nome principal como reserva. Ignora o `userOverride`, que é a escolha da pessoa para o trabalho
@@ -48,10 +49,11 @@ export function pickModels(i: PickInput): Picked {
   const config = i.module ?? i.global;
   if (!config) throw new Error("LlmConfig ausente (nem do módulo nem a global): rode o seed.");
 
-  const enabled = (id: unknown): id is ModelId => isModelId(id) && !i.disabledProviders.includes(providerOf(id));
+  const enabled = (id: unknown): id is ModelId => isModelId(id) && !i.disabledProviders.includes(providerOf(id)) && !i.unconfiguredProviders?.includes(providerOf(id));
 
   if (i.override) {
     if (!isModelId(i.override)) throw new HttpError(400, "Modelo de IA inválido.");
+    if (i.unconfiguredProviders?.includes(providerOf(i.override))) throw new HttpError(503,"O provedor desse modelo está sem chave configurada. Fale com o administrador.");
     if (!enabled(i.override)) throw new HttpError(400, "O provedor desse modelo está desativado.");
   }
 
@@ -106,6 +108,7 @@ export type ModelState = {
 
 /** Falha do provedor (não do pedido): limite, indisponibilidade, rede ou chave ausente. */
 export function shouldFallback(e: unknown): boolean {
+  if (e instanceof Error && e.name === "TimeoutError") return true;
   if (e instanceof Error && e.name === "AbortError") return false; // cancelamento do usuário
   if (LoadAPIKeyError.isInstance(e)) return true; // um provedor sem chave não pode derrubar a demo
   if (APICallError.isInstance(e)) {

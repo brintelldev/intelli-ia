@@ -62,7 +62,7 @@ export function modulesFor(role: Role): AppModule[] {
 /** Título da TopBar a partir do caminho; null se não for uma página de módulo. */
 export function pageTitle(pathname: string): { section: string; page?: string } | null {
   if (pathname.startsWith("/admin")) {
-    const sub: Record<string, string> = { "/admin/dashboard": "Dashboard", "/admin/llm": "Configuração de IA" };
+    const sub: Record<string, string> = { "/admin/dashboard": "Dashboard", "/admin/llm": "Configuração de IA", "/admin/settings": "Provedores e controles", "/admin/users": "Usuários", "/admin/users/new": "Novo usuário", "/admin/approvals": "Aprovações", "/admin/colecoes": "Coleções" };
     return { section: "Admin", page: sub[pathname] };
   }
   const m = MODULES.find((x) => pathname === x.href || pathname.startsWith(x.href + "/"));

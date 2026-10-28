@@ -1,0 +1,5 @@
+import { withPresentation } from "@/lib/replay";
+import{createUIMessageStream,createUIMessageStreamResponse}from'ai';import{requireRole,errorResponse}from'@/lib/session';import{ChatBody}from'@/lib/chat/rag-core';import{respondChat,type ChatMessage}from'@/lib/chat/respond';import{streamError}from'@/lib/stream-steps';
+async function livePOST(req:Request){try{const s=await requireRole(['Admin','Analista']);if(Number(req.headers.get('content-length'))>1_000_000)return Response.json({error:'Conversa grande demais. Envie apenas as mensagens recentes.'},{status:413});const parsed=ChatBody.safeParse(await req.json().catch(()=>null));if(!parsed.success)return Response.json({error:parsed.error.issues[0]?.message},{status:400});const stream=createUIMessageStream<ChatMessage>({onError:streamError,execute:({writer})=>respondChat(parsed.data,{userId:s.user.id,role:s.role},writer,req.signal)});return createUIMessageStreamResponse({stream});}catch(e){return errorResponse(e);}}
+
+export async function POST(req: Request) { return withPresentation(req, "chat", "demo3", "chat_message", livePOST); }

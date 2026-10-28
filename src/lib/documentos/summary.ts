@@ -45,9 +45,9 @@ export function lengthRule(size: SummaryInput["summary"]["size"], sections: bool
     : `Tamanho: o resumo INTEIRO deve ter ${WORDS[size]}, no total. É um limite, não uma sugestão. Escreva em texto corrido ou em poucos tópicos, sem dividir em seções com títulos.`;
 }
 
-/** Teto de tokens de saída: acompanha o tamanho pedido (folga de ~3x sobre o limite de palavras), para uma resposta longa demais não vir cortada. */
+/** Teto de tokens de saída: acompanha o tamanho pedido (inclui margem para o raciocínio dos modelos atuais, além do JSON), para uma resposta longa demais não vir cortada. */
 export function maxTokensFor(size: SummaryInput["summary"]["size"], sections: number): number {
-  const base = { curto: 700, medio: 1400, longo: 2600 }[size];
+  const base = { curto: 2400, medio: 3200, longo: 4800 }[size];
   return Math.min(8000, sections > 0 ? base * sections : base);
 }
 

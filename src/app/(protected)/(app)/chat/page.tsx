@@ -1,10 +1,2 @@
-import { RoleGate } from "@/components/auth/RoleGate";
-import { ModulePlaceholder } from "@/components/layout/ModulePlaceholder";
-
-export default function Page() {
-  return (
-    <RoleGate roles={["Admin", "Analista", "Leitor"]}>
-      <ModulePlaceholder title="Chat RAG" />
-    </RoleGate>
-  );
-}
+import{ChatPage}from'@/components/chat/ChatPage';
+export default function Page(props:{searchParams:Promise<Record<string,string|string[]|undefined>>}){return <ChatPage {...props}/>}

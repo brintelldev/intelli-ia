@@ -1,10 +1,10 @@
 import { RoleGate } from "@/components/auth/RoleGate";
-import { ModulePlaceholder } from "@/components/layout/ModulePlaceholder";
+import { MetricsDashboard } from "@/components/admin/MetricsDashboard";
 
 export default function Page() {
   return (
     <RoleGate roles={["Admin", "Analista"]}>
-      <ModulePlaceholder title="Dashboard" />
+      <MetricsDashboard />
     </RoleGate>
   );
 }

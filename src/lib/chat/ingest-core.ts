@@ -1,0 +1,4 @@
+import '@/lib/zod-pt';import{z}from'zod';import{chunkDocument}from'@/lib/pdf/chunker';import{estimateTokens}from'@/lib/pdf/document';
+export const IngestBody=z.object({text:z.string().trim().min(1).max(2_000_000),filename:z.string().trim().min(1).max(250),pages:z.array(z.object({number:z.number().int().min(1).max(3000),content:z.string().max(2_000_000)})).max(3000).optional(),sessionId:z.string().max(100).optional(),modelId:z.string().max(150).optional()});
+export type IngestInput=z.infer<typeof IngestBody>;
+export function prepareIngestion(input:Pick<IngestInput,'text'|'filename'|'pages'>){const pages=input.pages?.length?input.pages:[{number:1,content:input.text}];if(pages.reduce((n,p)=>n+p.content.length,0)>2_000_000)throw Error('Texto excede o limite');return chunkDocument({text:input.text,pages:pages.map(p=>({...p,tokenCount:estimateTokens(p.content)})),isProtected:false,isScanned:false});}

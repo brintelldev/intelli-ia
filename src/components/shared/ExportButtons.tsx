@@ -5,6 +5,7 @@ import { DownloadIcon, Loader2Icon } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { downloadBlob, exportData, exportFilename, type ExportData, type ExportFormat } from "@/lib/export";
+import { useExportApproval } from "./ExportApproval";
 import { cn } from "@/lib/utils";
 
 const LABEL: Record<ExportFormat, string> = { pdf: "PDF", docx: "Word", xlsx: "Excel", json: "JSON", md: "Markdown" };
@@ -21,6 +22,7 @@ export function ExportButtons({
   module,
   formats = ALL,
   beforeExport,
+  approvalAction,
   disabled,
   className,
 }: {
@@ -28,9 +30,11 @@ export function ExportButtons({
   module: "demo1" | "demo2" | "demo3";
   formats?: ExportFormat[];
   beforeExport?: (format: ExportFormat) => boolean | Promise<boolean>;
+  approvalAction?: "brief_export";
   disabled?: boolean;
   className?: string;
 }) {
+  const approval = useExportApproval(approvalAction === "brief_export");
   const [busy, setBusy] = useState<ExportFormat | null>(null);
 
   async function run(format: ExportFormat) {
@@ -39,6 +43,7 @@ export function ExportButtons({
     try {
       if (beforeExport && !(await beforeExport(format))) return;
       const data = await getData();
+      if (!(await approval.check(format, data))) return;
       const filename = exportFilename(data.title, format);
       downloadBlob(await exportData(format, data), filename);
       toast.success(`${LABEL[format]} baixado`, { description: filename });
@@ -57,13 +62,13 @@ export function ExportButtons({
   }
 
   return (
-    <div role="group" aria-label="Exportar" className={cn("flex flex-wrap items-center gap-2", className)}>
+    <div><div role="group" aria-label="Exportar" className={cn("flex flex-wrap items-center gap-2", className)}>
       {formats.map((f) => (
         <Button key={f} type="button" variant="outline" size="sm" disabled={disabled || busy !== null} onClick={() => run(f)} aria-busy={busy === f}>
           {busy === f ? <Loader2Icon className="animate-spin" data-icon="inline-start" /> : <DownloadIcon data-icon="inline-start" />}
           {LABEL[f]}
         </Button>
       ))}
-    </div>
+    </div>{approval.message && <p role="status" className="mt-2 text-xs text-text-secondary">{approval.message}</p>}</div>
   );
 }

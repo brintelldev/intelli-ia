@@ -2,7 +2,7 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
-/* Intelli AI é dark-only: os tokens vivem em :root e <html> leva a classe "dark". */
+/* Intelli Insights é dark-only: os tokens vivem em :root e <html> leva a classe "dark". */
 @custom-variant dark (&:is(.dark *));
 
 :root {

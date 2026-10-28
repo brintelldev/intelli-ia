@@ -1,0 +1,11 @@
+import assert from 'node:assert/strict';import{randomUUID}from'node:crypto';import{prisma}from'../src/lib/prisma';import{setCached}from'../src/lib/cache';import{researchCacheKey}from'../src/lib/pesquisa/request';import{DEFAULT_RESEARCH_TEMPLATE}from'../src/lib/pesquisa/agent';import{login,readParts,BASE}from'./lib/demo-client';
+async function main(){const query=`Pesquisa sintética T23 ${randomUUID()}`;const model='anthropic:claude-haiku-5-5';const key=await researchCacheKey(query,'gov',DEFAULT_RESEARCH_TEMPLATE,model);const clients=[];try{
+ const anon=await fetch(`${BASE}/api/pesquisa/history`);assert.equal(anon.status,401);
+ const analyst=await login();clients.push(analyst);const reader=await login('Leitor');clients.push(reader);const admin=await login('Admin');clients.push(admin);
+ assert.equal((await reader.fetch('/api/pesquisa/history')).status,403);
+ await setCached(key,{phase:'final',queries:['Norma sintética'],sources:[],report:{sections:[{heading:'Resumo',content:'Dado sintético para testar cache e autorização.'}],sourceIndex:[],references:[]},modelUsed:model},'demo2');
+ const t=Date.now();const parts=await readParts(await analyst.fetch('/api/pesquisa/agent',{method:'POST',body:JSON.stringify({query,filter:'gov',modelId:model})}));const cacheStreamMs=Date.now()-t;const final=parts.filter(p=>p.type==='data-research').at(-1)?.data as {reportId:string;cacheHit:boolean};assert.ok(final.reportId);assert.equal(final.cacheHit,true);
+ assert.equal((await admin.fetch(`/api/pesquisa/history/${final.reportId}`)).status,404);assert.equal((await analyst.fetch(`/api/pesquisa/history/${final.reportId}`)).status,200);
+ const history=await(await analyst.fetch('/api/pesquisa/history?page=1&limit=2')).json();assert.ok(history.items.some((r:{id:string})=>r.id===final.reportId));console.log(JSON.stringify({cacheStreamMs,anon:401,reader:403,otherOwner:404,own:200,history:true}));
+ }finally{await prisma.researchReport.deleteMany({where:{query}});await prisma.responseCache.deleteMany({where:{cacheKey:key}});await prisma.usageEvent.deleteMany({where:{metadata:{path:['title'],equals:query}}});await Promise.all(clients.map(c=>c.dispose()));await prisma.$disconnect();}}
+main().catch(()=>{console.error('Falha na verificação HTTP da pesquisa.');process.exitCode=1;});

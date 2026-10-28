@@ -1,0 +1,9 @@
+# Exemplo para /etc/cron.d/intellisuite. Ajuste caminho/usuário/URL e só então instale no VPS.
+SHELL=/bin/bash
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+# Backup diário; diretório 700, dumps 600. Não contém chaves de API, mas contém dados do app.
+0 2 * * * root cd /var/www/intellisuite && BACKUP_DIR=/var/backups/intellisuite ./scripts/backup.sh >> /var/log/intellisuite-backup.log 2>&1
+# No dia da apresentação: credenciais do smoke e webhook ficam num arquivo 600 do host.
+0 * * * * root cd /var/www/intellisuite && set -a && . /etc/intellisuite-monitor.env && set +a && ./scripts/monitor.sh "$APP_BASE_URL" >> /var/log/intellisuite-smoke.log 2>&1
+# Apenas imagens dangling do próprio app com mais de 7 dias; preserva imagens usadas por containers.
+30 3 * * 0 root docker image prune --force --filter 'until=168h' --filter 'label=com.intellisuite.app=true' >> /var/log/intellisuite-prune.log 2>&1

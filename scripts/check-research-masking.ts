@@ -1,0 +1,19 @@
+/** Teste HTTP com conteúdo fictício; ativa o filtro por um instante e restaura pelo Admin com auditoria. */
+import assert from'node:assert/strict';import{randomUUID}from'node:crypto';import{prisma}from'../src/lib/prisma';import{setCached}from'../src/lib/cache';import{researchCacheKey}from'../src/lib/pesquisa/request';import{DEFAULT_RESEARCH_TEMPLATE}from'../src/lib/pesquisa/agent';import{withMandatory}from'../src/lib/templates';import{login,readParts}from'./lib/demo-client';
+async function main(){const admin=await login('Admin'),client=await login();const user=await prisma.user.findUniqueOrThrow({where:{email:'analista@intellisuite.com'}});const tag=`QA_MASK_${randomUUID()}`,pii='qa@example.invalid CPF 529.982.247-25',query=`${tag} ${pii}`,url=`https://example.invalid/${tag}?email=qa%40example.invalid`,modelId='anthropic:claude-haiku-5-5';const key=await researchCacheKey(query,'all',withMandatory(DEFAULT_RESEARCH_TEMPLATE,'demo2_report'),modelId);let original:Record<string,boolean>|undefined;
+ try{
+  original=(await(await admin.fetch('/api/admin/settings')).json()).values.contentFilters;
+  const setting=await admin.fetch('/api/admin/settings',{method:'PUT',body:JSON.stringify({key:'contentFilters',value:{...original,Analista:true}})});assert.ok(setting.ok);
+  await setCached(key,{phase:'final',queries:[query],sources:[{url,title:query,snippet:pii,category:pii,topics:[pii],summary:pii,score:1,type:'web',origin:'tavily',n:1,robotsAllowed:true,collected:true}],report:{sections:[{heading:pii,content:`${pii} Fonte: ${url}`}],sourceIndex:[],references:[{label:pii,url,score:1}]},modelUsed:modelId,indexedContents:[[url,pii]]},'demo2',1);
+  const parts=await readParts(await client.fetch('/api/pesquisa/agent',{method:'POST',body:JSON.stringify({query,modelId})}));const part=parts.findLast(p=>p.type==='data-research')?.data as {reportId:string;cacheHit:boolean;sources:{url:string}[]};assert.equal(part.cacheHit,true);assert.equal(part.sources[0].url,'');
+  const safe=(v:unknown)=>assert.doesNotMatch(decodeURIComponent(JSON.stringify(v)),/qa@example\.invalid|529\.982\.247-25/);safe(parts);
+  const detail=await client.fetch(`/api/pesquisa/history/${part.reportId}`);assert.ok(detail.ok);safe(await detail.json());
+  const history=await(await client.fetch('/api/pesquisa/history?limit=50')).json();safe(history.items.find((r:{id:string})=>r.id===part.reportId));
+  const source=await prisma.documentSource.findFirstOrThrow({where:{userId:user.id,originUrl:url}});const base=await(await client.fetch('/api/chat/knowledge-base')).json();const visible=base.items.find((r:{id:string})=>r.id===source.id);assert.ok(visible);safe(visible);
+  const catalog=await client.fetch('/api/models');assert.ok(catalog.ok);const models=await catalog.json();if(!process.env.OPENAI_API_KEY?.trim())assert.ok(!models.models.some((m:{provider:string;replayOnly?:boolean})=>m.provider==='openai'&&!m.replayOnly));
+  console.log(JSON.stringify({streamMasked:true,detailMasked:true,historyMasked:true,knowledgeBaseMasked:true,encodedUrlHidden:true,unconfiguredModelsNotOfferedLive:true}));
+ }finally{
+  if(original){const restored=await admin.fetch('/api/admin/settings',{method:'PUT',body:JSON.stringify({key:'contentFilters',value:original})});assert.ok(restored.ok,'Restaurar configuração original');}
+  const docs=await prisma.documentSource.findMany({where:{userId:user.id,OR:[{originUrl:url},{filename:`Relatório — ${query.slice(0,120)}`}]},select:{id:true}});await prisma.documentChunk.deleteMany({where:{sourceId:{in:docs.map(d=>d.id)}}});await prisma.documentSource.deleteMany({where:{id:{in:docs.map(d=>d.id)}}});await prisma.researchReport.deleteMany({where:{userId:user.id,query}});await prisma.responseCache.deleteMany({where:{cacheKey:key}});await client.dispose();await admin.dispose();await prisma.$disconnect();
+ }}
+main().catch(e=>{console.error('Verificação de filtros:',e instanceof Error?e.name:'erro');process.exitCode=1;});

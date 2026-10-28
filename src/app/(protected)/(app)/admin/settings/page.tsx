@@ -1,0 +1,1 @@
+import{RoleGate}from'@/components/auth/RoleGate';import{SettingsPanel}from'@/components/admin/SettingsPanel';export default function Page(){return <RoleGate roles={['Admin']}><SettingsPanel/></RoleGate>}

@@ -1,0 +1,4 @@
+import{RoleGate}from'@/components/auth/RoleGate';import{requireRole}from'@/lib/session';import{ROLES}from'@/lib/rbac';import{ChatWorkspace}from'./ChatWorkspace';
+type Props={params?:Promise<{sessionId:string}>;searchParams:Promise<Record<string,string|string[]|undefined>>};
+async function Content({params,searchParams}:Props){const s=await requireRole(ROLES);const[route,query]=await Promise.all([params??Promise.resolve(undefined),searchParams]);const first=(value:string|string[]|undefined)=>typeof value==='string'?value:undefined;return <ChatWorkspace key={`${route?.sessionId??'new'}:${first(query.source)??''}:${first(query.report)??''}`} role={s.role} initialSessionId={route?.sessionId} initialSourceId={first(query.source)} initialReportId={first(query.report)}/>;}
+export function ChatPage(props:Props){return <RoleGate roles={ROLES}><Content {...props}/></RoleGate>}

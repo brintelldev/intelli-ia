@@ -1,4 +1,4 @@
-import { Output, streamText, type LanguageModel, type UIMessage, type UIMessageStreamWriter } from "ai";
+import { NoObjectGeneratedError, Output, streamText, type LanguageModel, type UIMessage, type UIMessageStreamWriter } from "ai";
 import { step, type StepData } from "@/lib/stream-steps";
 import { buildSectionsSchema, normalizeSections, type Template } from "@/lib/templates";
 import { withUntrustedRule, wrapUntrusted } from "@/lib/untrusted";
@@ -38,6 +38,7 @@ export async function runSummary(opts: {
     // o teto acompanha o tamanho pedido (e o nº de seções); o LlmConfig.maxTokens não vale aqui
     maxOutputTokens: maxTokensFor(input.summary.size, template?.sections.length ?? 0),
     abortSignal: opts.signal,
+    providerOptions: { anthropic: { effort: "low" } },
     system: withUntrustedRule(SUMMARY_SYSTEM),
     prompt: buildSummaryPrompt({
       documentBlock: wrapUntrusted(pagesToText(evidence.pages), { id: 1, source: input.filename }),
@@ -61,6 +62,7 @@ export async function runSummary(opts: {
   try {
     out = (await result.output) as typeof out;
   } catch (e) {
+    if (NoObjectGeneratedError.isInstance(e)) console.error("[summary] objeto inválido", { finishReason: e.finishReason, outputTokens: e.usage?.outputTokens, inputTokens: e.usage?.inputTokens, generatedChars: e.text?.length });
     step(writer, "write", "A redação do resumo falhou", "error");
     throw e;
   }

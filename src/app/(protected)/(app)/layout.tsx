@@ -1,3 +1,4 @@
+import { DataProvider } from "@/components/providers/DataProvider";
 import type { ReactNode } from "react";
 import { Suspense } from "react";
 import { RoleGate } from "@/components/auth/RoleGate";
@@ -12,20 +13,20 @@ import { ROLES } from "@/lib/rbac";
 // com o próprio <RoleGate>.
 export default function AppLayout({ children }: { children: ReactNode }) {
   return (
-    <div className="flex min-h-screen">
+    <DataProvider><div className="flex min-h-screen">
       <Sidebar />
       <div className="flex min-w-0 flex-1 flex-col">
-        <TopBar>
+        <Suspense fallback={<div className="h-14 shrink-0 border-b border-border" aria-label="Carregando navegação" />}><TopBar>
           {/* no mobile a sidebar some: o menu do usuário (e o Sair) vem para a TopBar */}
           <Suspense fallback={<Skeleton className="size-8 rounded-full md:hidden" />}>
             <UserMenu className="md:hidden" />
           </Suspense>
-        </TopBar>
+        </TopBar></Suspense>
         <div className="flex flex-1 flex-col pb-16 md:pb-0">
           <RoleGate roles={ROLES}>{children}</RoleGate>
         </div>
       </div>
       <BottomNav />
-    </div>
+    </div></DataProvider>
   );
 }

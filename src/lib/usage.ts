@@ -1,7 +1,5 @@
 import { Prisma } from "@/generated/prisma/client";
 import { HttpError } from "@/lib/http-error";
-import type { ModelState } from "@/lib/llm-core";
-import { costUsd } from "@/lib/pricing";
 import { prisma } from "@/lib/prisma";
 import type { Role } from "@/lib/rbac";
 import {
@@ -13,7 +11,6 @@ import {
   resolveTimeZone,
   type Limits,
   type Spent,
-  type UsageMetadata,
 } from "@/lib/usage-core";
 
 // Métricas, limite diário de custo e filtro de conteúdo. As regras puras estão em usage-core.ts.
@@ -39,30 +36,7 @@ export const track = createTrack((data) =>
   prisma.usageEvent.create({ data: { ...data, metadata: data.metadata as Prisma.InputJsonObject } }),
 );
 
-/**
- * Metadados de uso de uma chamada de IA: modelo que respondeu, tokens e custo em USD. O custo usa
- * o `activeModelId` (se o fallback entrou, foi o fallback que gerou o gasto) e fica GRAVADO no evento.
- * Sem preço ou sem contagem de tokens, marca `costUnknown` em vez de gravar um custo zero que seria falso.
- */
-export function usageMeta(
-  state: ModelState,
-  usage: { inputTokens?: number | undefined; outputTokens?: number | undefined },
-): UsageMetadata {
-  const meta: UsageMetadata = { modelId: state.activeModelId, fallbackUsed: state.fallbackUsed };
-  if (state.fallbackReason) meta.fallbackReason = state.fallbackReason;
-  if (usage.inputTokens === undefined && usage.outputTokens === undefined) {
-    meta.costUnknown = true; // o provedor não informou o uso
-    return meta;
-  }
-  meta.inputTokens = usage.inputTokens ?? 0;
-  meta.outputTokens = usage.outputTokens ?? 0;
-  try {
-    meta.costUsd = costUsd(state.activeModelId, meta.inputTokens, meta.outputTokens);
-  } catch {
-    meta.costUnknown = true;
-  }
-  return meta;
-}
+export { usageMeta } from "./usage-cost";
 
 // ── orçamento diário ─────────────────────────────────────────────────────────────────
 
@@ -86,7 +60,8 @@ export async function getDailySpend(userId: string | null, module: string | null
       SUM((e.metadata->>'costUsd')::double precision) AS global_cost
     FROM "UsageEvent" e, bounds
     WHERE e."createdAt" >= bounds.start_utc
-      AND jsonb_typeof(e.metadata->'costUsd') = 'number'`);
+      AND jsonb_typeof(e.metadata->'costUsd') = 'number'
+      AND COALESCE(e.metadata->>'synthetic','false') <> 'true'`);
   const r = rows[0];
   return { user: r?.user_cost ?? 0, module: r?.module_cost ?? 0, global: r?.global_cost ?? 0 };
 }

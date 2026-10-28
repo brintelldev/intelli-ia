@@ -1,0 +1,1 @@
+import{RoleGate}from'@/components/auth/RoleGate';import{ApprovalQueue}from'@/components/admin/ApprovalQueue';export default function Page(){return <RoleGate roles={['Admin']}><ApprovalQueue/></RoleGate>}

@@ -7,6 +7,7 @@ export type UsageModule = (typeof USAGE_MODULES)[number];
 
 // Valores de UsageEvent.action (TECHSPEC §10). A Home, o dashboard e o limite de custo leem estes nomes.
 export const USAGE_ACTIONS = [
+  "llm_call",
   "pdf_parse",
   "keyword_suggest",
   "pdf_analysis",
@@ -14,6 +15,8 @@ export const USAGE_ACTIONS = [
   "summary_generation",
   "document_export",
   "web_search",
+  "tavily_search",
+  "tavily_extract",
   "search_cache_hit",
   "chat_message",
   "chat_cache_hit",
@@ -157,13 +160,29 @@ const PHONE_LANDLINE = /(?<![\d])(?:\+?55[\s.-]?)?(?:\(\d{2}\)[\s.-]?\d{4}[\s.-]
  * Não cobre nomes nem endereços. Para texto em streaming, aplique sobre linhas ou sobre o texto
  * completo: um dado cortado entre dois pedaços não é reconhecido.
  */
-export function maskPII(text: string): string {
+function maskPIIPlain(text: string): string {
   return text
     .replace(EMAIL, "[e-mail ocultado]")
     .replace(CPF_FORMATTED, "[CPF ocultado]")
     .replace(CPF_PLAIN, (m) => (validCpf(m) ? "[CPF ocultado]" : m))
     .replace(PHONE_MOBILE, "[telefone ocultado]")
     .replace(PHONE_LANDLINE, "[telefone ocultado]");
+}
+
+/** URL com PII não recebe um destino inventado: seu link é ocultado. */
+export function maskPIIUrl(raw:string):string {
+ let value=raw;
+ for(let i=0;i<32;i++){
+  if(maskPIIPlain(value)!==value)return '';
+  let decoded:string;try{decoded=decodeURIComponent(value);}catch{decoded=value.replace(/%([a-f0-9]{2})/gi,(_m,h:string)=>String.fromCharCode(parseInt(h,16)));}
+  if(decoded===value)return raw;
+  value=decoded;
+ }
+ return ''; // codificação patológica profunda: não expor um endereço que não foi inspecionado.
+}
+export function maskPII(text:string):string {
+ const urls=text.replace(/https?:\/\/[^\s<>"'`]+/gi,url=>maskPIIUrl(url)?url:'[endereço ocultado]');
+ return maskPIIPlain(urls);
 }
 
 // ── orçamento diário ───────────────────────────────────────────────────────────────────

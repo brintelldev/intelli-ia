@@ -1,3 +1,4 @@
+import {assertRequestOrigin} from "./request-origin";
 import { headers } from "next/headers";
 import { cache } from "react";
 import { auth } from "@/lib/auth";
@@ -21,6 +22,9 @@ export async function requireRole(roles: readonly Role[]): Promise<AppSession & 
   if (!session) throw new HttpError(401, "Não autenticado");
   const role = session.user.role;
   if (!isRole(role) || !roles.includes(role)) throw new HttpError(403, "Sem permissão");
+  const requestHeaders = await headers();
+  const base = process.env.BETTER_AUTH_URL || `http://${requestHeaders.get("host") || "localhost"}`;
+  assertRequestOrigin(requestHeaders.get("origin"), requestHeaders.get("sec-fetch-site"), base);
   return Object.assign(session, { role });
 }
 

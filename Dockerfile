@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 # Debian slim, não Alpine: o onnxruntime-node (embeddings) não roda em musl.
-FROM node:24-slim AS base
+FROM node:24-slim@sha256:55fb5f5a527ea2c5c4a95f963e48ef90aa38c7b346054fdc8ee9957a2b55d205 AS base
 WORKDIR /app
 ENV NEXT_TELEMETRY_DISABLED=1
 
@@ -32,6 +32,7 @@ RUN apt-get update -y && apt-get install -y --no-install-recommends openssl \
  && rm -rf /var/lib/apt/lists/*
 
 FROM base AS runner
+LABEL com.intellisuite.app=true
 ENV NODE_ENV=production PORT=3000 HOSTNAME=0.0.0.0 HF_HOME=/app/.cache
 RUN groupadd --system --gid 1001 nodejs \
  && useradd --system --uid 1001 --gid nodejs nextjs \

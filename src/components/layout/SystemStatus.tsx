@@ -7,9 +7,9 @@ type State = "checking" | "ok" | "degraded" | "down";
 
 const VIEW: Record<State, { label: string; dot: string; ping: boolean }> = {
   checking: { label: "CHECKING…", dot: "bg-text-muted", ping: false },
-  ok: { label: "SYSTEM ONLINE", dot: "bg-emerald-400", ping: true },
-  degraded: { label: "SYSTEM DEGRADED", dot: "bg-amber-400", ping: true },
-  down: { label: "SYSTEM OFFLINE", dot: "bg-red-400", ping: false },
+  ok: { label: "SISTEMA ONLINE", dot: "bg-emerald-400", ping: true },
+  degraded: { label: "SISTEMA PARCIAL", dot: "bg-amber-400", ping: true },
+  down: { label: "SISTEMA OFFLINE", dot: "bg-red-400", ping: false },
 };
 
 // Estado real da stack (GET /api/health), reconsultado a cada minuto. Começa em "CHECKING…" para

@@ -1,0 +1,53 @@
+# Plano B local: imagens já construídas/baixadas, banco restaurado e rede sem saída para internet.
+# ./scripts/offline-start.sh sobe a stack e abre a ponte de loopback, sem rede externa.
+services:
+  postgres:
+    image: pgvector/pgvector:0.8.7-pg17
+    environment:
+      POSTGRES_DB: intellisuite
+      POSTGRES_USER: intellisuite
+      POSTGRES_PASSWORD: ${OFFLINE_POSTGRES_PASSWORD:?gere .env.offline}
+    volumes:
+      - offline_data:/var/lib/postgresql/data
+      - ${OFFLINE_BACKUP:?informe o caminho absoluto do dump}:/backup/source.dump:ro
+      - ./deploy/offline/restore.sh:/docker-entrypoint-initdb.d/10-restore.sh:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U intellisuite -d intellisuite"]
+      interval: 3s
+      timeout: 3s
+      retries: 30
+    restart: unless-stopped
+  nextjs:
+    image: intellisuite:verification
+    environment:
+      DATABASE_URL: postgresql://intellisuite:${OFFLINE_POSTGRES_PASSWORD}@postgres:5432/intellisuite
+      BETTER_AUTH_SECRET: ${OFFLINE_AUTH_SECRET:?gere .env.offline}
+      BETTER_AUTH_URL: http://127.0.0.1:${OFFLINE_PORT:-3030}
+      NEXT_PUBLIC_APP_URL: http://127.0.0.1:${OFFLINE_PORT:-3030}
+      DOCLING_URL: http://docling:5001
+      SEARXNG_URL: http://searxng:8080
+      HF_HOME: /app/.cache
+    volumes: ["./.cache:/app/.cache:ro"]
+    depends_on:
+      postgres: { condition: service_healthy }
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+  docling:
+    image: quay.io/docling-project/docling-serve-cpu:v1.38.1
+    environment: { DOCLING_SERVE_ENABLE_UI: "false" }
+    restart: unless-stopped
+  searxng:
+    image: searxng/searxng:2026.10.25-54ca1d9cf
+    volumes: ["./searxng:/etc/searxng:ro"]
+    environment:
+      SEARXNG_BASE_URL: http://searxng:8080/
+      SEARXNG_SECRET: ${OFFLINE_SEARXNG_SECRET:?gere .env.offline}
+    restart: unless-stopped
+networks:
+  default: { internal: true }
+volumes:
+  offline_data:

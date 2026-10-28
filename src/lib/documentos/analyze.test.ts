@@ -163,3 +163,5 @@ test("resposta que não é o objeto pedido: a etapa vira erro e o erro sobe", as
   assert.equal(r.steps.find((s) => s.id === "analyze")?.status, "error");
   assert.ok(!r.parts.some((p) => p.type === "data-analysis" && (p as { data: AnalysisPart }).data.phase === "final"));
 });
+
+test('analysis emits per-call usage metadata independently of the final shared model state',async()=>{const calls:string[]=[];const r=await run({main:new MockLanguageModelV4({doStream:async()=>streamOf(analysisJson())}),onUsage:(kind,u)=>{assert.ok(u.inputTokens);calls.push(kind);}});assert.equal(r.error,undefined);assert.deepEqual(calls,['main']);});

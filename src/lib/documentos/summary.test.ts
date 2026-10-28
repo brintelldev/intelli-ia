@@ -77,8 +77,8 @@ test("o prompt muda com o público: técnico, executivo e jurídico dão instru�
 test("lengthRule e maxTokensFor: limite total no texto corrido, por seção no modelo; teto acompanha o tamanho", () => {
   assert.match(lengthRule("medio", false), /INTEIRO deve ter entre 120 e 250 palavras, no total/);
   assert.match(lengthRule("longo", true), /cada seção deve ter entre 300 e 500 palavras/);
-  assert.deepEqual([maxTokensFor("curto", 0), maxTokensFor("medio", 0), maxTokensFor("longo", 0)], [700, 1400, 2600]);
-  assert.equal(maxTokensFor("medio", 4), 5600, "multiplica pelo nº de seções");
+  assert.deepEqual([maxTokensFor("curto", 0), maxTokensFor("medio", 0), maxTokensFor("longo", 0)], [2400, 3200, 4800]);
+  assert.equal(maxTokensFor("medio", 4), 8000, "multiplica pelo nº de seções");
   assert.equal(maxTokensFor("longo", 12), 8000, "com teto");
   const withTpl = buildSummaryPrompt({ documentBlock: "<d/>", keywords: [], filename: "c.pdf", partial: false, audience: "tecnico", format: effectiveFormat(null, { size: "curto", audience: "tecnico" }), template: { sections: [{ title: "A" }], format: DEFAULT_FORMAT } });
   assert.match(withTpl, /cada seção deve ter no máximo 80 palavras/);
@@ -88,6 +88,8 @@ test("resumo em texto corrido: etapas, texto final aparado e uso informado", asy
   const model = new MockLanguageModelV4({ doStream: async () => streamOf(JSON.stringify({ summary: "  O SLA exige 99,5% (p. 2).  " })) });
   const r = await run(model);
   assert.equal(r.error, undefined);
+  assert.ok(model.doStreamCalls[0].maxOutputTokens! >= 2400, "reserva tokens para raciocínio e objeto final");
+  assert.deepEqual(model.doStreamCalls[0].providerOptions?.anthropic, {effort:"low"});
   assert.deepEqual(r.steps.map((s) => [s.id, s.status]), [["prepare", "done"], ["write", "done"]]);
   assert.deepEqual(r.part, { phase: "final", summary: "O SLA exige 99,5% (p. 2).", sections: undefined, partialEvidence: false });
   assert.deepEqual([r.result!.usage.inputTokens, r.result!.usage.outputTokens], [80, 30]);

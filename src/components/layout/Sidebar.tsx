@@ -1,3 +1,4 @@
+import { ApprovalBadge } from "@/components/admin/AdminNav";
 import { Suspense } from "react";
 import { LogoutButton } from "@/components/auth/LogoutButton";
 import { Badge } from "@/components/ui/badge";
@@ -23,6 +24,7 @@ export function Sidebar() {
           <SidebarNav />
         </Suspense>
       </nav>
+      <ApprovalBadge />
       <div className="mt-auto border-t border-border p-3">
         <Suspense fallback={<Skeleton className="mx-auto h-9 w-9 rounded-full xl:mx-0 xl:w-full" />}>
           <SidebarUser />

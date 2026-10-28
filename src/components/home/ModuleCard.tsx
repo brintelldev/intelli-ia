@@ -23,7 +23,7 @@ export function ModuleCard({ module: m }: { module: AppModule }) {
             <p className="text-sm text-text-secondary">{m.description}</p>
           </div>
           <span className={cn("mt-auto text-sm font-medium transition-transform duration-150 group-hover:translate-x-0.5", c.text)}>
-            Launch Module →
+            Abrir módulo →
           </span>
         </CardContent>
       </Card>

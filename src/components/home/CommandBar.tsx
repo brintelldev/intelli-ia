@@ -51,7 +51,7 @@ export function CommandBar({ role }: { role: Role }) {
         </kbd>
       </div>
       <Button type="submit" size="lg" disabled={pending} className="h-12 rounded-xl px-5 font-semibold text-white">
-        {pending ? "…" : "Execute →"}
+        {pending ? "…" : "Executar →"}
       </Button>
     </form>
   );

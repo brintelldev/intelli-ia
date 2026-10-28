@@ -1,3 +1,4 @@
+import { withPresentation } from "@/lib/replay";
 import { createUIMessageStream, createUIMessageStreamResponse } from "ai";
 import { BriefBody, selectEvidence } from "@/lib/documentos/brief";
 import { runBrief, type BriefMessage } from "@/lib/documentos/brief-run";
@@ -12,7 +13,7 @@ import { assertWithinBudget, track, usageMeta } from "@/lib/usage";
 const DEFAULT_BRIEF_MODEL = "anthropic:claude-opus-5-5";
 const TZ = process.env.APP_TIMEZONE?.trim() || "America/Sao_Paulo";
 
-export async function POST(req: Request) {
+async function livePOST(req: Request) {
   const t0 = Date.now();
   try {
     const session = await requireRole(["Admin", "Analista"]);
@@ -74,3 +75,5 @@ export async function POST(req: Request) {
     return errorResponse(e);
   }
 }
+
+export async function POST(req: Request) { return withPresentation(req, "generate-brief", "demo1", "brief_generation", livePOST); }

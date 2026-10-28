@@ -1,0 +1,171 @@
+{
+  "model": "Xenova/paraphrase-multilingual-MiniLM-L12-v2 q8",
+  "chunks": 337,
+  "threshold": 0.3,
+  "minPositive": 0.3084667885622668,
+  "maxNegative": 0.29236576964955474,
+  "falseNegatives": 0,
+  "falsePositives": 0,
+  "results": [
+    {
+      "question": "Qual a disponibilidade mensal mínima do SLA no contrato de serviços de TI?",
+      "positive": true,
+      "score": 0.7043661388478542,
+      "bestFile": "contrato_ti_12p.pdf",
+      "bestPage": 5,
+      "expectedScore": 0.7043661388478542
+    },
+    {
+      "question": "Em quanto tempo deve ser comunicado um incidente de dados pessoais no contrato de TI?",
+      "positive": true,
+      "score": 0.6216824482021981,
+      "bestFile": "contrato_ti_12p.pdf",
+      "bestPage": 10,
+      "expectedScore": 0.5578529099807468
+    },
+    {
+      "question": "Qual é a multa diária por atraso no contrato de serviços de TI?",
+      "positive": true,
+      "score": 0.7466207616171568,
+      "bestFile": "contrato_fornecimento_10p.pdf",
+      "bestPage": 7,
+      "expectedScore": 0.6010185072360026
+    },
+    {
+      "question": "Qual o prazo de entrega dos equipamentos no contrato de fornecimento?",
+      "positive": true,
+      "score": 0.7028687710522247,
+      "bestFile": "contrato_fornecimento_10p.pdf",
+      "bestPage": 5,
+      "expectedScore": 0.6833817883801502
+    },
+    {
+      "question": "Por quantos meses os equipamentos fornecidos têm garantia?",
+      "positive": true,
+      "score": 0.7407413215472848,
+      "bestFile": "contrato_fornecimento_10p.pdf",
+      "bestPage": 5,
+      "expectedScore": 0.7407413215472848
+    },
+    {
+      "question": "Qual o foro competente no contrato de fornecimento de equipamentos?",
+      "positive": true,
+      "score": 0.671999176291868,
+      "bestFile": "contrato_ti_12p.pdf",
+      "bestPage": 1,
+      "expectedScore": 0.3084667885622668
+    },
+    {
+      "question": "Qual a disponibilidade mensal na tabela de níveis de serviço?",
+      "positive": true,
+      "score": 0.7467061124916891,
+      "bestFile": "relatorio_tabelas_6p.pdf",
+      "bestPage": 2,
+      "expectedScore": 0.7467061124916891
+    },
+    {
+      "question": "Qual o valor unitário das licenças no regulamento técnico?",
+      "positive": true,
+      "score": 0.6089900731953061,
+      "bestFile": "regulamento_90p.pdf",
+      "bestPage": 14,
+      "expectedScore": 0.6089900731953061
+    },
+    {
+      "question": "Qual a frequência das auditorias previstas no regulamento?",
+      "positive": true,
+      "score": 0.721013798993686,
+      "bestFile": "regulamento_90p.pdf",
+      "bestPage": 63,
+      "expectedScore": 0.6879723606915532
+    },
+    {
+      "question": "Quando entra em vigor o regulamento?",
+      "positive": true,
+      "score": 0.7092123201019063,
+      "bestFile": "regulamento_90p.pdf",
+      "bestPage": 88,
+      "expectedScore": 0.7092123201019063
+    },
+    {
+      "question": "Como preparar um bolo de cenoura?",
+      "positive": false,
+      "score": 0.10183476521988016,
+      "bestFile": "contrato_fornecimento_10p.pdf",
+      "bestPage": 10,
+      "expectedScore": null
+    },
+    {
+      "question": "Quem venceu a Copa do Mundo de 1930?",
+      "positive": false,
+      "score": 0.14739331288205193,
+      "bestFile": "contrato_ti_12p.pdf",
+      "bestPage": 12,
+      "expectedScore": null
+    },
+    {
+      "question": "Qual a distância média entre a Terra e a Lua?",
+      "positive": false,
+      "score": 0.23231167022486418,
+      "bestFile": "relatorio_tabelas_6p.pdf",
+      "bestPage": 3,
+      "expectedScore": null
+    },
+    {
+      "question": "O que é mitose?",
+      "positive": false,
+      "score": 0.19146572690885597,
+      "bestFile": "contrato_ti_12p.pdf",
+      "bestPage": 9,
+      "expectedScore": null
+    },
+    {
+      "question": "Quais planetas do Sistema Solar são gigantes gasosos?",
+      "positive": false,
+      "score": 0.29236576964955474,
+      "bestFile": "relatorio_tabelas_6p.pdf",
+      "bestPage": 1,
+      "expectedScore": null
+    },
+    {
+      "question": "Qual a origem histórica da capoeira?",
+      "positive": false,
+      "score": 0.16765975672324085,
+      "bestFile": "contrato_fornecimento_10p.pdf",
+      "bestPage": 10,
+      "expectedScore": null
+    },
+    {
+      "question": "Como afinar um violino?",
+      "positive": false,
+      "score": 0.19398670533479004,
+      "bestFile": "regulamento_90p.pdf",
+      "bestPage": 49,
+      "expectedScore": null
+    },
+    {
+      "question": "Como calcular a área de um hexágono regular?",
+      "positive": false,
+      "score": 0.28175760535284805,
+      "bestFile": "relatorio_tabelas_6p.pdf",
+      "bestPage": 3,
+      "expectedScore": null
+    },
+    {
+      "question": "Qual a biografia de Clarice Lispector?",
+      "positive": false,
+      "score": 0.21204411870646217,
+      "bestFile": "contrato_fornecimento_10p.pdf",
+      "bestPage": 9,
+      "expectedScore": null
+    },
+    {
+      "question": "Como acontece a digestão de lipídios?",
+      "positive": false,
+      "score": 0.21907540388420868,
+      "bestFile": "regulamento_90p.pdf",
+      "bestPage": 67,
+      "expectedScore": null
+    }
+  ]
+}

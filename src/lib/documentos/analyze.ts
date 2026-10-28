@@ -39,6 +39,7 @@ export async function runAnalysis(opts: {
   models: { main: LanguageModel; fast: LanguageModel };
   settings: { temperature: number; maxOutputTokens: number };
   signal?: AbortSignal;
+  onUsage?: (kind: "main" | "fast", usage: Usage, responseModelId?: string) => void;
   indexDocument?: (a: CheckedAnalysis) => Promise<{ sourceId: string; chunkCount: number }>;
 }): Promise<AnalysisResult> {
   const { writer, input, template, models, settings, signal, indexDocument } = opts;
@@ -76,6 +77,7 @@ export async function runAnalysis(opts: {
         });
         notes[i] = `Notas das páginas ${g[0].number} a ${g.at(-1)!.number}:\n${r.text.trim()}`;
         mapCalls.push(r.totalUsage);
+        opts.onUsage?.("fast", r.totalUsage, r.response.modelId);
         step(writer, "map", `Resumindo o documento em ${groups.length} partes`, "running", { done: ++done, total: groups.length });
       }
     };
@@ -124,6 +126,7 @@ export async function runAnalysis(opts: {
     throw e;
   }
   const mainUsage = await result.totalUsage;
+  opts.onUsage?.("main", mainUsage, (await result.response).modelId);
 
   const checked = checkAnalysis(raw, pages, input.keywords);
   if (template) checked.summarySections = normalizeSections(template, raw.summarySections ?? []);

@@ -1,0 +1,2 @@
+import test from'node:test';import assert from'node:assert/strict';import{boundSearchResult}from'./search-core';
+test('untrusted source titles/snippets cannot expand the agent prompt without bounds',()=>{const source={url:'https://example.com',title:'T'.repeat(20000),snippet:'S'.repeat(200000),origin:'tavily' as const,type:'web' as const,score:0.5};const safe=boundSearchResult(source);assert.ok(safe);assert.equal(safe.title.length,500);assert.equal(safe.snippet.length,3000);assert.equal(boundSearchResult({...source,url:'https://example.com/'+ 'x'.repeat(5000)}),null);});

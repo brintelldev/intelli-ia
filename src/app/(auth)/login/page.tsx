@@ -3,7 +3,7 @@ import Link from "next/link";
 import { LoginForm } from "./login-form";
 import { Logo } from "@/components/layout/Logo";
 
-export const metadata: Metadata = { title: "Entrar · Intelli AI" };
+export const metadata: Metadata = { title: "Entrar · Intelli Insights" };
 
 export default function LoginPage() {
   return (

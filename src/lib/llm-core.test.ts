@@ -184,3 +184,10 @@ test("se o fallback também falhar, o erro do fallback é o que sobe", async () 
   const model = withFallbackModel(failing(apiError(429, true)), failing(apiError(503, true)), GEMINI, state);
   await assert.rejects(generateText({ model, prompt: "oi", maxRetries: 0 }), (e) => APICallError.isInstance(e) && e.statusCode === 503);
 });
+
+test("provider timeout permits fallback while user cancellation does not",()=>{assert.equal(shouldFallback(new DOMException("Prazo", "TimeoutError")),true);assert.equal(shouldFallback(new DOMException("Cancelado", "AbortError")),false);});
+test('provedores sem chave são pulados automaticamente e escolha explícita informa configuração pendente',()=>{
+ assert.equal(pickModels({...base,unconfiguredProviders:['google'],preferFallback:true}).primary,GPT);
+ assert.equal(pickModels({...base,unconfiguredProviders:['anthropic']}).primary,GEMINI);
+ assert.throws(()=>pickModels({...base,override:GPT,unconfiguredProviders:['openai']}),(e)=>e instanceof HttpError&&e.status===503&&/chave/.test(e.message));
+});

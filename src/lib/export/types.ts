@@ -7,6 +7,8 @@ export type ExportData = {
   /** data, modelo, nº de fontes… */
   metadata: Record<string, unknown>;
   citations?: { label: string; url?: string; score?: number }[];
+  /** Dados estruturados adicionais, preservados no JSON e ignorados na apresentação dos demais formatos. */
+  structured?: unknown;
   /** aba de achados do XLSX */
   table?: { columns: string[]; rows: (string | number)[][] };
 };

@@ -1,0 +1,10 @@
+import '@/lib/zod-pt';import{z}from'zod';import{prisma}from'@/lib/prisma';import{ROLES}from'@/lib/rbac';import{purgeChatCache}from'@/lib/privacy';import{track}from'@/lib/usage';import{HttpError}from'@/lib/http-error';
+export const CollectionBody=z.object({name:z.string().trim().min(1).max(120),kind:z.enum(['normativa','artigo_tecnico','referencia_oficial','documento']),description:z.string().trim().max(1000).default(''),allowedRoles:z.array(z.enum(ROLES)).max(3).default([]),allowedUserIds:z.array(z.string().min(1).max(100)).max(100).default([])});
+export type CollectionInput=z.infer<typeof CollectionBody>;
+export async function saveCollection(input:CollectionInput,userId:string,id?:string){const before=id?await prisma.collection.findUnique({where:{id}}):null;if(id&&!before)throw new HttpError(404,'Coleção não encontrada.');
+ const users=await prisma.user.count({where:{id:{in:[...new Set(input.allowedUserIds)]}}});if(users!==new Set(input.allowedUserIds).size)throw new HttpError(400,'Um dos usuários autorizados não existe.');
+ const row=id?await prisma.collection.update({where:{id},data:input}):await prisma.collection.create({data:{...input,createdById:userId}});await purgeChatCache();
+ for(const subjectType of ['allowedRoles','allowedUserIds'] as const){const old=before?.[subjectType]??[];for(const subjectId of new Set([...old,...row[subjectType]])){const was=old.includes(subjectId),now=row[subjectType].includes(subjectId);if(was!==now)void track({module:'demo4',action:'collection_access_update',userId,status:'success',metadata:{collectionId:row.id,subjectType,subjectId,before:was,after:now}});}}
+ return row;
+}
+export async function removeCollection(id:string,userId:string){const exists=await prisma.collection.findUnique({where:{id}});if(!exists)throw new HttpError(404,'Coleção não encontrada.');await prisma.$transaction([prisma.documentChunk.deleteMany({where:{collectionId:id}}),prisma.documentSource.deleteMany({where:{collectionId:id}}),prisma.collection.delete({where:{id}})]);await purgeChatCache();void track({module:'demo4',action:'collection_access_update',userId,status:'success',metadata:{collectionId:id,deleted:true}});}

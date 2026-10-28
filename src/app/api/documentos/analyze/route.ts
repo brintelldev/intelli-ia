@@ -1,3 +1,5 @@
+import type { UsageMetadata } from "@/lib/usage-core";
+import { withPresentation } from "@/lib/replay";
 import { createUIMessageStream, createUIMessageStreamResponse } from "ai";
 import { AnalyzeBody } from "@/lib/documentos/analysis";
 import { runAnalysis, type AnalysisMessage } from "@/lib/documentos/analyze";
@@ -11,7 +13,7 @@ import { assertWithinBudget, track, usageMeta } from "@/lib/usage";
 
 // Análise do documento (itens 112 a 115): stream com etapas (`data-step`) e o objeto da análise crescendo
 // (`data-analysis`, parcial e depois final). Erros ANTES do stream (400, 401, 403, 404, 429) saem como JSON.
-export async function POST(req: Request) {
+async function livePOST(req: Request) {
   const t0 = Date.now();
   try {
     const session = await requireRole(["Admin", "Analista"]);
@@ -39,8 +41,14 @@ export async function POST(req: Request) {
       execute: async ({ writer }) => {
         writer.write({ type: "start" });
         try {
+          let mainCall: UsageMetadata | undefined;
           const r = await runAnalysis({
             writer,
+            onUsage: (kind, usage, modelId) => {
+              const meta = usageMeta(kind === "fast" ? fast.state : main.state, usage, modelId);
+              if (kind === "main") mainCall = meta;
+              else void track({ module: "demo1", action: "llm_call", userId, status: "success", metadata: { ...meta, parentAction: "pdf_analysis" } });
+            },
             input,
             template,
             models: { main: main.model, fast: fast.model },
@@ -49,17 +57,7 @@ export async function POST(req: Request) {
             indexDocument: input.index ? (analysis) => indexAnalyzedDocument({ userId, filename: input.filename, pages: input.pages, analysis }) : undefined,
           });
           // o custo é o da análise + o de CADA chamada de notas por partes (outro modelo), calculado chamada a chamada
-          const a = usageMeta(main.state, r.mainUsage);
-          const calls = r.mapCalls.map((u) => usageMeta(fast.state, u));
-          const m = calls.length
-            ? {
-                costUsd: calls.reduce((n, c) => n + (c.costUsd ?? 0), 0),
-                inputTokens: calls.reduce((n, c) => n + (c.inputTokens ?? 0), 0),
-                outputTokens: calls.reduce((n, c) => n + (c.outputTokens ?? 0), 0),
-                modelId: fast.state.activeModelId,
-                unknown: calls.some((c) => c.costUnknown),
-              }
-            : null;
+          const a = mainCall ?? usageMeta(main.state, r.mainUsage);
           void track({
             module: "demo1",
             action: "pdf_analysis",
@@ -68,7 +66,7 @@ export async function POST(req: Request) {
             durationMs: Date.now() - t0,
             metadata: {
               ...a,
-              ...(m ? { costUsd: (a.costUsd ?? 0) + m.costUsd, mapModelId: m.modelId, mapInputTokens: m.inputTokens, mapOutputTokens: m.outputTokens, mapCalls: calls.length, ...(a.costUnknown || m.unknown ? { costUnknown: true } : {}) } : {}),
+              mapCalls: r.mapCalls.length,
               title: input.filename,
               pages: input.pages.length,
               keywords: input.keywords.length,
@@ -87,3 +85,5 @@ export async function POST(req: Request) {
     return errorResponse(e);
   }
 }
+
+export async function POST(req: Request) { return withPresentation(req, "analyze", "demo1", "pdf_analysis", livePOST); }

@@ -146,7 +146,8 @@ async function checkCalls(disabled: string[]) {
         output: Output.object({ schema }),
         prompt: 'Qual é a capital do Brasil? Responda apenas com o objeto {"capital": "...", "pais": "..."}.',
         temperature,
-        maxOutputTokens: 400,
+        maxOutputTokens: 1600,
+        providerOptions: { anthropic: { effort: "low" } },
         maxRetries: 0,
         abortSignal: AbortSignal.timeout(60_000),
       });
@@ -189,7 +190,8 @@ async function checkInjection(disabled: string[]) {
         system: withUntrustedRule("Você resume documentos em uma única frase, em português."),
         prompt: `Resuma o documento abaixo em uma frase.\n\n${wrapUntrusted(MALICIOUS_DOC, { id: 1, source: "relatorio.pdf" })}`,
         temperature: 0,
-        maxOutputTokens: 400,
+        maxOutputTokens: 1600,
+        providerOptions: { anthropic: { effort: "low" } },
         maxRetries: 0,
         abortSignal: AbortSignal.timeout(60_000),
       });

@@ -1,4 +1,5 @@
 "use client";
+import { presentationFetch } from "@/lib/presentation-fetch";
 
 import { useEffect, useRef, useState } from "react";
 import { Loader2Icon, PlusIcon, SparklesIcon, XIcon } from "lucide-react";
@@ -45,7 +46,7 @@ export function KeywordInput({
   useEffect(() => {
     if (!excerpt || !key) return;
     let alive = true;
-    fetch("/api/documentos/suggest-keywords", {
+    presentationFetch("/api/documentos/suggest-keywords", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ text: excerpt, existing: valueRef.current, filename }),

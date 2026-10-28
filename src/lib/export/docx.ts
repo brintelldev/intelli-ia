@@ -38,7 +38,7 @@ export async function toDocx(data: ExportData): Promise<Blob> {
   });
   const doc = new Document({
     title: data.title,
-    creator: "Intelli AI",
+    creator: "Intelli Insights",
     styles: { default: { document: { run: { font: "Calibri", size: 22 } } } },
     sections: [{ footers: { default: footer }, children }],
   });

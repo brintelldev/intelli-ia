@@ -16,7 +16,7 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Intelli AI",
+  title: "Intelli Insights",
   description:
     "Plataforma de IA empresarial: análise de documentos, pesquisa web e chat com base de conhecimento.",
 };

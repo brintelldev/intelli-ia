@@ -3,7 +3,7 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { Logo } from "@/components/layout/Logo";
 
-export const metadata: Metadata = { title: "Privacidade · Intelli AI" };
+export const metadata: Metadata = { title: "Privacidade · Intelli Insights" };
 
 // Página pública. As políticas dos provedores foram conferidas nas páginas oficiais na data abaixo;
 // ao trocar de provedor, de plano ou de modelo, reconferir e atualizar.
@@ -57,7 +57,7 @@ export default function PrivacyPage() {
         </Link>
         <h1 className="text-3xl font-extrabold tracking-tight md:text-4xl">Privacidade e tratamento de dados</h1>
         <p className="text-text-secondary">
-          Como o Intelli AI trata os documentos, as conversas e os dados de uso. Atualizado em {UPDATED}.
+          Como o Intelli Insights trata os documentos, as conversas e os dados de uso. Atualizado em {UPDATED}.
         </p>
       </header>
 

@@ -1,0 +1,2 @@
+import test from'node:test';import assert from'node:assert/strict';import{ADMIN_LINKS}from'./AdminNav';import{canAccess}from'@/lib/rbac';
+test('administrative destinations follow the RBAC matrix',()=>{assert.equal(ADMIN_LINKS.length,6);for(const[href]of ADMIN_LINKS){assert.equal(canAccess('Admin',href),true);assert.equal(canAccess('Leitor',href),false);assert.equal(canAccess('Analista',href),href==='/admin/dashboard');}});
